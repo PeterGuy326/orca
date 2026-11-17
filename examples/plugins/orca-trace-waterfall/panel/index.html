@@ -2374,7 +2374,9 @@
       function applyRunAnswer(answer) {
         const previous =
           D?.run.id === answer.run.id && (t0 !== FULL[0] || t1 !== FULL[1]) ? [t0, t1] : null
-        if (D?.run.id !== answer.run.id) clearRun()
+        if (D?.run.id !== answer.run.id) {
+          clearRun()
+        }
         processData(answer)
         if (previous) {
           const span = Math.min(previous[1] - previous[0], FULL[1] - FULL[0])
@@ -2382,8 +2384,10 @@
           t1 = t0 + span
         }
         buildLabels()
-        if (view === 'timeline') render()
-        document.getElementById('maxc').textContent = '∥' + maxC
+        if (view === 'timeline') {
+          render()
+        }
+        document.getElementById('maxc').textContent = `∥${maxC}`
         document.getElementById('foot').textContent =
           '实时读取 · ' +
           answer.run.id +

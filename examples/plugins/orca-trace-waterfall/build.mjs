@@ -16,6 +16,17 @@ const scope = () => ({
 const options = { configFile: false, root, base: './', publicDir: false }
 await build({
   ...options,
+  plugins: [
+    {
+      name: 'generated-bundle-type-lint',
+      generateBundle(_options, bundle) {
+        const output = bundle['redesign.js']
+        if (output?.type === 'chunk') {
+          output.code = `/* oxlint-disable typescript/switch-exhaustiveness-check, typescript/restrict-template-expressions -- Generated bundle includes untyped third-party Three.js; source remains checked. */\n${output.code}`
+        }
+      }
+    }
+  ],
   css: { postcss: { plugins: [scope()] } },
   build: {
     outDir: 'dist',
