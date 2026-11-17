@@ -33,9 +33,9 @@ export function query(db: string, sql: string): Promise<Row[]> {
       'sqlite3',
       ['-readonly', '-json', db, sql],
       { windowsHide: true, timeout: 15000, maxBuffer: 16 * 1024 * 1024 },
-      (error, stdout, stderr) => {
+      (error, stdout) => {
         if (error) {
-          reject(new Error(stderr.trim() || error.message))
+          reject(new Error('协作数据库读取失败，请重试'))
           return
         }
         const text = stdout.trim()

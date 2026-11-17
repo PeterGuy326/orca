@@ -4,6 +4,7 @@ import { sessionFor } from './trace-session.ts'
 import { query, toMs, clip } from './trace-db.ts'
 import { shortTitle, goalTitle, deliveryOf } from './trace-delivery.ts'
 import { runMessages } from './trace-messages.ts'
+import { parseTraceRecord } from './trace-record.ts'
 
 const FAILED = new Set(['failed', 'blocked', 'abandoned', 'stop_unknown', 'start_unknown', 'error'])
 
@@ -67,7 +68,7 @@ export async function loadRun(db: string, runId: string, terminals: Terminal[] |
       label: String(title) || String(task.id),
       shortTitle: shortTitle(String(title)),
       input: String(task.spec ?? ''),
-      dependencies: JSON.parse(String(task.deps ?? '[]')),
+      dependencies: parseTraceRecord(String(task.deps ?? '[]')),
       status: String(task.status ?? 'pending'),
       start: toMs(task.created_at),
       end: toMs(task.completed_at),
@@ -165,7 +166,7 @@ export async function loadRun(db: string, runId: string, terminals: Terminal[] |
     node.outputSummary = node.outputSummary ?? ''
     node.outputMessageId = node.outputMessageId ?? null
     const task = tasks.find((t) => String(t.id) === node.id)
-    const result = task?.result ? JSON.parse(String(task.result)) : null
+    const result = task?.result ? parseTraceRecord(String(task.result)) : null
     const report = mapped.find(
       (m) => m.id === result?.messageId && m.type === 'worker_done' && m.taskId === node.id
     )

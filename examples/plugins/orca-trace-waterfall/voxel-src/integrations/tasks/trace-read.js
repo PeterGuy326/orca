@@ -30,7 +30,11 @@ export async function loadTrace(request, runId, current = () => true) {
       if (offset !== total) {
         throw new Error('分段读取缺失')
       }
-      return JSON.parse(chunks.join(''))
+      try {
+        return JSON.parse(chunks.join(''))
+      } catch {
+        throw new Error('协作记录格式无效，请重试')
+      }
     }
     if (answer.nextOffset !== offset) {
       throw new Error('分段位置不连续')

@@ -1,54 +1,14 @@
 import { chromium } from '@playwright/test'
-import { readFile, mkdir, writeFile } from 'node:fs/promises'
-import http from 'node:http'
+import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import assert from 'node:assert/strict'
-import { execFile } from 'node:child_process'
-import { promisify } from 'node:util'
+import { createReadBridge } from './read-bridge.mjs'
 const root = path.resolve(import.meta.dirname, '..'),
   out = process.env.OFFICE_PLUGIN_EVIDENCE
 assert.ok(out)
 await mkdir(out, { recursive: true })
-const exec = promisify(execFile),
-  live = process.env.OFFICE_PLUGIN_LIVE === '1'
-const server = http.createServer(async (req, res) => {
-  try {
-    const u = new URL(req.url, 'http://localhost')
-    if (u.pathname === '/rpc') {
-      if (!['trace.live', 'trace.load', 'trace.runs'].includes(u.searchParams.get('n'))) {
-        throw new Error('Only trace read handlers are allowed')
-      }
-      const args = [
-        'plugin',
-        'dev',
-        'request',
-        'local.orca-trace-waterfall',
-        u.searchParams.get('n')
-      ]
-      if (u.searchParams.get('d') !== 'undefined') {
-        args.push('--data', u.searchParams.get('d'))
-      }
-      args.push('--json')
-      const a = JSON.parse((await exec('orca', args)).stdout)
-      if (!a.ok) {
-        throw new Error(a.error.message)
-      }
-      res.end(JSON.stringify(a.result.result))
-      return
-    }
-    const f = path.resolve(root, `.${u.pathname}`)
-    if (!f.startsWith(`${root}/`)) {
-      throw new Error('Invalid static resource path')
-    }
-    res.setHeader(
-      'Content-Type',
-      f.endsWith('.js') ? 'text/javascript' : f.endsWith('.css') ? 'text/css' : 'text/html'
-    )
-    res.end(await readFile(f))
-  } catch (e) {
-    res.writeHead(500).end(e.message)
-  }
-})
+const live = process.env.OFFICE_PLUGIN_LIVE === '1'
+const server = createReadBridge({ root, live })
 await new Promise((r) => server.listen(0, '127.0.0.1', r))
 const browser = await chromium.launch({
   headless: true,
@@ -65,10 +25,14 @@ await page.addInitScript(
       plugin: {
         async request(n, d) {
           if (live) {
-            return (await fetch(`/rpc?n=${n}&d=${encodeURIComponent(JSON.stringify(d))}`)).json()
+            const response = await fetch(`/rpc?n=${n}&d=${encodeURIComponent(JSON.stringify(d))}`)
+            if (!response.ok) {
+              throw new Error('Trace read unavailable')
+            }
+            return response.json()
           }
           if (window.mode === 'fail') {
-            throw new Error('synthetic')
+            throw new Error('api_key=synthetic-private-value')
           }
           if (n === 'trace.live') {
             return {
@@ -341,11 +305,41 @@ try {
     await page.evaluate(() => (window.mode = 'fail'))
     await page.locator('#refresh').evaluate((b) => b.click())
     await page.waitForFunction(() => window.TraceRedesign.getState().error)
+    assert.ok(!(await page.locator('#notice').textContent()).includes('synthetic-private-value'))
+    assert.ok(!(await page.locator('#notice').textContent()).includes('api_key'))
     assert.ok(
       (await page.evaluate(() => window.TraceRedesign.getState())).office.bindings.every(
         (p) => p.action === 'idle'
       )
     )
+    await page.evaluate(() => {
+      const read = window.orca.plugin.request
+      window.orca.plugin.request = async (name, data) => {
+        if (name === 'trace.runs') {
+          if (window.mode === 'history-list-fail') {
+            throw new Error('password=synthetic-private-value')
+          }
+          return { runs: [{ id: 'H', objective: 'synthetic history' }] }
+        }
+        if (name === 'trace.load' && data.runId === 'H') {
+          throw new Error('api_key=synthetic-private-value')
+        }
+        return read(name, data)
+      }
+    })
+    for (const mode of ['history-list-fail', 'history-body-fail']) {
+      await page.evaluate((value) => (window.mode = value), mode)
+      await page.locator('#refresh').evaluate((button) => button.click())
+      await page.waitForFunction(() => !window.TraceRedesign.getState().error)
+      await page.locator('#history').click()
+      if (mode === 'history-body-fail') {
+        await page.locator('#run').selectOption('H')
+      }
+      await page.waitForFunction(() => window.TraceRedesign.getState().error)
+      assert.ok(!(await page.locator('#notice').textContent()).includes('synthetic-private-value'))
+      assert.ok(!(await page.locator('#notice').textContent()).includes('password'))
+      assert.equal(await page.evaluate(() => window.TraceTimeline.getState().runId), undefined)
+    }
     await page.evaluate(() => (window.mode = 'empty'))
     await page.locator('#refresh').evaluate((b) => b.click())
     await page.waitForFunction(() => window.TraceRedesign.getState().people.length === 0)

@@ -82,23 +82,39 @@ export function createTracePager() {
   }
 }
 
+export function traceReply<T>(handler: (input: T) => unknown) {
+  return async (input: T) => {
+    try {
+      return await handler(input)
+    } catch {
+      throw new Error('协作记录读取失败，请重试')
+    }
+  }
+}
+
 export default function activate(orca: OrcaWorkerApi): void {
   const page = createTracePager()
-  orca.panels.handle('trace.runs', async () => sanitize({ runs: await listRuns(dbPath()) }))
-  orca.panels.handle('trace.live', async () =>
-    sanitize({ now: Date.now(), runs: await liveRuns(dbPath()) })
+  orca.panels.handle(
+    'trace.runs',
+    traceReply(async () => sanitize({ runs: await listRuns(dbPath()) }))
+  )
+  orca.panels.handle(
+    'trace.live',
+    traceReply(async () => sanitize({ now: Date.now(), runs: await liveRuns(dbPath()) }))
   )
   orca.panels.handle(
     'trace.load',
-    async (input: { runId: string; snapshotId?: string; offset?: number }) =>
+    traceReply(async (input: { runId: string; snapshotId?: string; offset?: number }) =>
       page(
         input,
         input.snapshotId
           ? undefined
           : sanitize(await loadRun(dbPath(), String(input.runId), await liveTerminals()))
       )
+    )
   )
-  orca.panels.handle('trace.session.open', async (input: { session: Session }) =>
-    openSession(input.session)
+  orca.panels.handle(
+    'trace.session.open',
+    traceReply(async (input: { session: Session }) => openSession(input.session))
   )
 }

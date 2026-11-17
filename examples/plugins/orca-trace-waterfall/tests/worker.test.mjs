@@ -1,7 +1,48 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { sanitize, openSession, sessionFor, createTracePager } from '../src/worker.ts'
+import { sanitize, openSession, sessionFor, createTracePager, traceReply } from '../src/worker.ts'
+import { parseTraceRecord } from '../src/trace-record.ts'
 import { loadTrace } from '../voxel-src/integrations/tasks/trace-read.js'
+import activate from '../src/worker.ts'
+
+test('malformed records and unknown worker errors expose no original content', async () => {
+  for (const text of ['api_key=synthetic-private-value', '{"password":"synthetic-private-value"']) {
+    assert.throws(() => parseTraceRecord(text), { message: '协作记录格式无效，请重试' })
+    await assert.rejects(traceReply(() => parseTraceRecord(text))(), {
+      message: '协作记录读取失败，请重试'
+    })
+    await assert.rejects(
+      traceReply(async () => {
+        throw new Error(text)
+      })(),
+      { message: '协作记录读取失败，请重试' }
+    )
+    await assert.rejects(
+      loadTrace(
+        async () => ({
+          paged: true,
+          runId: 'broken',
+          snapshotId: 'one',
+          total: text.length,
+          offset: 0,
+          chunk: text,
+          nextOffset: null
+        }),
+        'broken'
+      ),
+      { message: '协作记录格式无效，请重试' }
+    )
+  }
+  const handlers = new Map()
+  activate({ panels: { handle: (name, handler) => handlers.set(name, handler) } })
+  await assert.rejects(
+    handlers.get('trace.load')({ runId: 'broken', snapshotId: 'api_key=synthetic-private-value' }),
+    { message: '协作记录读取失败，请重试' }
+  )
+  await assert.rejects(handlers.get('trace.session.open')({ session: null }), {
+    message: '协作记录读取失败，请重试'
+  })
+})
 
 test('outward trace values recursively redact credentials', () => {
   assert.deepEqual(

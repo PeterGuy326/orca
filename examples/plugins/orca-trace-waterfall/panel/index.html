@@ -2363,14 +2363,6 @@
         else render()
       })
 
-      function showError(e, ctx) {
-        detail.innerHTML =
-          '<span style="color:var(--red)">' +
-          esc(ctx || '') +
-          ' ' +
-          esc(e?.message || e) +
-          '</span>'
-      }
       function applyRunAnswer(answer) {
         const previous =
           D?.run.id === answer.run.id && (t0 !== FULL[0] || t1 !== FULL[1]) ? [t0, t1] : null

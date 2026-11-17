@@ -1,5 +1,6 @@
 import type { TraceNode } from './trace-types.ts'
 import { query, toMs } from './trace-db.ts'
+import { parseTraceRecord } from './trace-record.ts'
 
 export async function runMessages(db: string, runId: string, nodes: TraceNode[]) {
   const messages = await query(
@@ -42,7 +43,7 @@ export async function runMessages(db: string, runId: string, nodes: TraceNode[])
     }
   }
   const mapped = messages.map((m) => {
-    const payload = m.payload ? JSON.parse(String(m.payload)) : null
+    const payload = m.payload ? parseTraceRecord(String(m.payload)) : null
     const at = toMs(m.created_at)
     const dispatchId = payload?.dispatchId as string | undefined
     const fromHandle = String(m.from_handle ?? '')

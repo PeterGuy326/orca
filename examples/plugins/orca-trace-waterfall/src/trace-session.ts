@@ -20,11 +20,11 @@ function orcaCommand(args: string[]): Promise<CliResult> {
       process.env.ORCA_CLI_COMMAND || 'orca',
       args,
       { windowsHide: true, timeout: 8000, maxBuffer: 2 * 1024 * 1024 },
-      (error, stdout, stderr) => {
+      (_error, stdout) => {
         try {
           resolve(JSON.parse(stdout))
         } catch {
-          reject(new Error(stderr.trim() || error?.message || 'Orca CLI returned invalid JSON'))
+          reject(new Error('Orca 会话读取失败，请重试'))
         }
       }
     )
@@ -75,7 +75,7 @@ export async function openSession(session: Session, command = orcaCommand) {
     return {
       opened: false,
       status: reply.error?.code === 'terminal_handle_stale' ? 'closed' : 'unavailable',
-      reason: reply.error?.message || '会话跳转失败'
+      reason: '会话跳转失败，请重试'
     }
   }
   return { opened: true, terminalId: session.terminalId, agent: session.agent, name: session.name }

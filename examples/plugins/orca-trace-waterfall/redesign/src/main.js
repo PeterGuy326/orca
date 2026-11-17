@@ -55,10 +55,10 @@ function clear() {
   close()
   window.TraceTimeline.clear()
 }
-function fail(e) {
-  error = e.message
+function fail() {
+  error = '协作记录读取失败，请重试'
   notice.hidden = false
-  notice.textContent = `读取失败 / unknown：${e.message}`
+  notice.textContent = `读取失败 / unknown：${error}`
   document.getElementById('refresh').hidden = false
   office.fail()
 }
