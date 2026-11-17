@@ -1,26 +1,41 @@
 import { adaptRun, dateTime } from './model.js'
+import '../../voxel-src/integrations/tasks/task-displays.css'
 import { createOfficeView } from './office-view.js'
 import { currentOffice, officePeople } from './current-office.js'
 import { loadTrace } from '../../voxel-src/integrations/tasks/trace-read.js'
 const root=document.getElementById('redesign'), drawer=root.querySelector('#drawer'), notice=root.querySelector('#notice')
 const request=(name,data)=>orca.plugin.request(name,data)
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c])
-let models=[],people=[],chosen=null,error=null,version=0,ready=false
+let models=[],people=[],chosen=null,error=null,version=0,ready=false,selectedPerson=null,opener=null
 const office=createOfficeView({root:root.querySelector('#view-office'),onTask:(id,person)=>showPerson(person)})
 const title=document.getElementById('current-title'), history=document.getElementById('run')
-function clear(){drawer.hidden=true;drawer.replaceChildren();window.TraceTimeline.clear()}
+function close(){selectedPerson=null;drawer.hidden=true;drawer.replaceChildren();if(opener?.isConnected)opener.focus()}
+function clear(){close();window.TraceTimeline.clear()}
 function fail(e){error=e.message;notice.hidden=false;notice.textContent='读取失败 / unknown：'+e.message;document.getElementById('refresh').hidden=false;office.fail()}
-function showPerson(person) {
-  if(!person)return
-  const tasks=people.find(p=>p.id===person.id)?.tasks || person.tasks
+function showPerson(person,reveal=true) {
+  person=people.find(p=>p.id===person?.id)
+  if(!person){close();return}
+  if(reveal){version++;opener=document.activeElement}
+  selectedPerson=person.id
+  const tasks=person.tasks
+  const expanded=new Set([...drawer.querySelectorAll('details[open]')].map(d=>d.parentElement.querySelector('p')?.textContent+d.querySelector('summary').textContent)),scroll=drawer.scrollTop
   drawer.hidden=false
   drawer.innerHTML=`<button id="close">收起</button><h2>${esc(person.name)}</h2><p>来源：Orca 原生派发 · ${esc(person.terminalId || '会话未关联')}</p>${tasks.map((t,i)=>`<article><h3>${esc(t.row?.title || t.model.data.run.objective)}</h3><p>${esc(t.row?.owner)} · ${esc(t.model.data.run.id)}</p><button data-flow="${i}">查看流程</button><details><summary>输入与回报</summary><pre>${esc(t.row?.input)}</pre><pre>${esc(t.row?.output)}</pre></details><details><summary>对话</summary>${(t.row?.messages||[]).map(m=>`<p>${esc(m.type)} ${dateTime(m.at)}</p><pre>${esc(m.body)}</pre>`).join('')}</details></article>`).join('')}`
-  drawer.querySelector('#close').onclick=()=>drawer.hidden=true
-  drawer.querySelectorAll('[data-flow]').forEach(b=>b.onclick=()=>flow(tasks[Number(b.dataset.flow)].model))
+  drawer.querySelector('#close').onclick=close
+  drawer.querySelectorAll('[data-flow]').forEach((b,i)=>{
+    const status=document.createElement('p');status.textContent=tasks[i].label;b.after(status)
+    const run=tasks[i].model.data.run.id,dispatch=tasks[i].node.id
+    b.onclick=()=>{const task=people.find(p=>p.id===selectedPerson)?.tasks.find(t=>t.model.data.run.id===run && t.node.id===dispatch);if(task)flow(task.model)}
+  })
+  drawer.querySelectorAll('details').forEach(d=>{d.open=expanded.has(d.parentElement.querySelector('p')?.textContent+d.querySelector('summary').textContent)})
+  if(!reveal)drawer.scrollTop=scroll
+  if(reveal){drawer.scrollTop=0;drawer.querySelector('#close').focus({preventScroll:true})}
 }
-function flow(model){
+function flow(model,historical=false){
+  version++
   const changed=chosen?.data.run.id!==model.data.run.id
   chosen=model
+  chosen.historical=historical
   if(changed)window.TraceTimeline.clear()
   title.textContent=model.data.run.shortTitle || model.data.run.objective
   title.title=model.data.run.id
@@ -30,15 +45,14 @@ function flow(model){
 function back(){version++;chosen=null;history.hidden=true;clear();title.textContent='当前协作';window.TraceTimeline.show('office')}
 const poll=currentOffice({request,onError:fail,onData(bundles){
   models=bundles.map(b=>adaptRun(b));people=officePeople(models)
-  ready=true;error=null;notice.hidden=true
-  if(chosen && models.some(m=>m.data.run.id===chosen.data.run.id)) {
-    chosen=models.find(m=>m.data.run.id===chosen.data.run.id);window.TraceTimeline.apply(chosen.data)
-  }
   office.setPeople(people,models);ready=true;error=null;notice.hidden=true
-  if(chosen){const fresh=models.find(m=>m.data.run.id===chosen.data.run.id);if(fresh){chosen=fresh;window.TraceTimeline.apply(fresh.data)}}
+  if(selectedPerson)showPerson({id:selectedPerson},false)
+  if(chosen && !chosen.historical){const fresh=models.find(m=>m.data.run.id===chosen.data.run.id);if(fresh){chosen=fresh;window.TraceTimeline.apply(fresh.data)}else{chosen=null;window.TraceTimeline.clear();title.textContent='协作已结束'}}
 }})
 document.getElementById('vTime').onclick=()=>{
-  if(chosen){flow(chosen);return}
+  version++
+  if(chosen){flow(chosen,chosen.historical);return}
+  window.TraceTimeline.show('office');selectedPerson=null
   drawer.hidden=false
   drawer.innerHTML='<p>请选择人物查看流程</p>'+models.map((m,i)=>`<button data-run="${i}">${esc(m.data.run.shortTitle)}</button>`).join('')
   drawer.querySelectorAll('[data-run]').forEach(b=>b.onclick=()=>flow(models[Number(b.dataset.run)]))
@@ -51,14 +65,15 @@ document.getElementById('history').onclick=async()=>{
     const result=await request('trace.runs');if(token!==version)return
     history.replaceChildren(...result.runs.map(r=>new Option(r.objective,r.id)))
     history.hidden=false;history.value=''
-  }catch(e){fail(e)}
+  }catch(e){if(token===version)fail(e)}
 }
 history.onchange=async()=>{
   const token=++version;chosen=null;clear()
-  try{const data=await loadTrace(request,history.value,()=>token===version);if(token!==version)return;flow(adaptRun({data,liveSummary:{active:0},capturedAt:Date.now()}))}catch(e){if(token===version)fail(e)}
+  try{const data=await loadTrace(request,history.value,()=>token===version);if(token!==version)return;flow(adaptRun({data,liveSummary:{active:0},capturedAt:Date.now()}),true)}catch(e){if(token===version)fail(e)}
 }
 document.getElementById('vOffice').onclick=()=>{history.hidden=true;back()}
 window.TraceRedesign={show:v=>office.show(v),fail,getState:()=>({ready,error,runId:chosen?.data.run.id,people:people.map(p=>({id:p.id,name:p.name,tasks:p.tasks.map(t=>({run:t.model.data.run.id,task:t.row?.id}))})),office:office.getState()})}
 window.PrototypeRedesign={getState:()=>window.TraceRedesign.getState()}
 window.addEventListener('pagehide',()=>{poll.dispose();office.dispose();version++},{once:true})
+window.addEventListener('keydown',e=>{if(e.key==='Escape' && !drawer.hidden){version++;close()}})
 office.show(true);void poll.start()

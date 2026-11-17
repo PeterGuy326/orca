@@ -928,7 +928,7 @@
       #redesign .workspace { display:block; padding:0; }
       #redesign .office-stage { height:calc(100vh - 80px); min-height:300px; position:relative; }
       #redesign #office-viewport { width:100%; height:100%; }
-      #redesign #drawer { background:var(--bg2); border:1px solid var(--border); padding:12px; max-height:65vh; overflow:auto; }
+      #redesign #drawer { position:fixed; bottom:0; left:0; right:0; z-index:10; background:var(--bg2); border:1px solid var(--border); padding:12px; max-height:65vh; overflow:auto; }
       #redesign #drawer pre { white-space:pre-wrap; overflow-wrap:anywhere; font:inherit; }
       #redesign #drawer h2 { font:inherit; font-weight:600; }
       #redesign #notice { padding:8px 12px; color:var(--red); }
@@ -1020,7 +1020,7 @@
           <div class="office-card">
             <div id="office-stage" class="office-stage">
               <div id="office-viewport" tabindex="0" aria-label="动态办公室：拖拽旋转、滚轮缩放、点人物看任务"></div>
-              <div class="office-cameras"><button data-office-camera="room">全景</button><button data-office-camera="person">近景</button><button data-office-camera="top">俯视</button><button id="office-computer">电脑</button></div>
+              <div class="office-cameras"><button data-office-camera="room">全景</button><button data-office-camera="person">近景</button><button data-office-camera="top">俯视</button></div>
             </div>
             <div class="office-status">
               <span id="office-source"></span>

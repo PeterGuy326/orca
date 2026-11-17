@@ -9,15 +9,17 @@ Click a person or expand the session list to open task input, reports and exact 
 From this folder:
 
 ```sh
-npm ci
+npm install --legacy-peer-deps --no-package-lock
 npm run build
 npm test
 orca plugin validate . --json
 orca plugin check . --json
 orca plugin test . --json
-ORCA_BACKGROUND_LAUNCH=1 OFFICE_PLUGIN_EVIDENCE=/absolute/external/evidence node tests/browser-regression.mjs
+ORCA_BACKGROUND_LAUNCH=1 OFFICE_PLUGIN_EVIDENCE=/absolute/external/evidence node tests/unified-browser.mjs
 ```
 
 The browser regression uses synthetic inputs unless OFFICE_PLUGIN_LIVE=1. In live mode its loopback bridge calls the actual loaded development plugin with the Orca CLI and permits only read handlers. Failure and status transition checks are explicitly synthetic.
+
+`browser-regression.mjs` and `polling-regression.mjs` target the pre-unified interface at 623fa262; run them only against that revision. Current lifecycle, range, gesture and isolation checks belong to unified-browser. Multi-task summary priority is running, waiting reply, starting, then unknown; each task retains its own state. The status time is the oldest full-read time, not the list-poll time. Computer/task displays are unavailable in the unified scene and their entry has been removed.
 
 Build output contains one scene bundle and licensed assets. The former standalone prototype server is historical; build and validate the plugin panel. Private snapshots, transcripts, database exports and screenshots must remain outside this repository. No capabilities or data-writing handlers are added.

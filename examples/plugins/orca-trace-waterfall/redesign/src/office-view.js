@@ -1,7 +1,6 @@
 import { createScene } from '../../voxel-src/engine/scene.js'
 import { assembleOffice } from '../../voxel-src/world/assemble-office.js'
 import { getLayout } from '../../voxel-src/layouts/registry.js'
-import { createTaskDisplays } from '../../voxel-src/integrations/tasks/task-displays.js'
 import { createOrcaSource } from '../../voxel-src/integrations/tasks/orca-source.js'
 
 export function createOfficeView({ root, onTask }) {
@@ -54,7 +53,6 @@ export function createOfficeView({ root, onTask }) {
       managedActors: true,
       personCameraOffset: [4.5, 2.1, 1.2],
       labels: { pickPerson: '查看该会话的当前任务', selecting: (name) => name },
-      mountTasks: (context) => createTaskDisplays({ ...context, root, initialSource: feed }),
       onEvent(event) {
         if (event.type !== 'selection' || programmatic) {
           return
@@ -115,7 +113,7 @@ export function createOfficeView({ root, onTask }) {
     root.querySelector('#office-prev').disabled = page === 0
     root.querySelector('#office-next').disabled = page >= pages - 1
     root.querySelector('#office-source').textContent = model
-      ? `${entities().length} 个会话 · ${new Date(model.capturedAt).toLocaleTimeString('zh-CN', { hour12: false })}更新`
+      ? `${entities().length} 个会话 · 数据 ${new Date(model.capturedAt).toLocaleTimeString('zh-CN', { hour12: false })}`
       : '暂无快照'
     root.querySelector('#office-source').title = '仅 Orca 原生派发，未覆盖外部会话；10秒查列表，最多15秒复用记录'
   }
@@ -153,16 +151,6 @@ export function createOfficeView({ root, onTask }) {
         office?.renderNow()
       })
   )
-  root.querySelector('#office-computer').onclick = () => {
-    const entity = entities().find((item) => item.id === selected) || current()[0]
-    const display = office?.tasks
-      .getState()
-      .bindings.find((item) => item.actorIndex === slots.get(entity?.id) % 9)
-    if (display) {
-      office.tasks.focus(display.displayId)
-      office.renderNow()
-    }
-  }
   for (const [selector, change] of [
     ['#office-prev', -1],
     ['#office-next', 1]
@@ -183,7 +171,7 @@ export function createOfficeView({ root, onTask }) {
         let seat=0;while(used.has(seat))seat++
         slots.set(person.id,seat);used.add(seat)
       }
-      model={data:{run:{id:'current'}},byId:new Map(),rows:[],bundle:{liveSummary:{active:people.filter(p=>p.action!=='idle').length}},capturedAt:Date.now()}
+      model={data:{run:{id:'current'}},byId:new Map(),rows:[],bundle:{liveSummary:{active:people.filter(p=>p.action!=='idle').length}},capturedAt:models.length?Math.min(...models.map(m=>m.capturedAt)):Date.now()}
       page=Math.min(page,Math.max(0,Math.ceil((Math.max(-1,...slots.values())+1)/9)-1))
       notify();paint()
     },

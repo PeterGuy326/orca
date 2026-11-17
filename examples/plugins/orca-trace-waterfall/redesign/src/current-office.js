@@ -10,7 +10,7 @@ export function officePeople(models) {
       if (!['starting','running','waiting_reply','unknown'].includes(state)) continue
       const id=node.terminalId || model.data.run.id+':'+node.id
       const taskRow=model.rows.find(r=>r.id===node.taskId || r.id===node.parentId)
-      const task={model,row:taskRow,node}
+      const task={model,row:taskRow,node,state,label,action}
       let person=people.get(id)
       if(!person) {
         const raw=String(node.session?.name || node.session?.agent || node.agent || 'Agent')
@@ -19,10 +19,14 @@ export function officePeople(models) {
         people.set(id,person)
       }
       person.tasks.push(task)
-      if(action==='work') {person.action=action;person.state=state;person.label=label}
     }
   }
-  return [...people.values()]
+  const priority={running:0,waiting_reply:1,starting:2,unknown:3}
+  return [...people.values()].map(person=>{
+    person.tasks.sort((a,b)=>priority[a.state]-priority[b.state] || a.model.data.run.id.localeCompare(b.model.data.run.id) || a.node.id.localeCompare(b.node.id))
+    const task=person.tasks[0]
+    return {...person,state:task.state,label:task.label,action:task.action,taskRow:task.row}
+  })
 }
 export function currentOffice({request,onData,onError,interval=10000}) {
   let generation=0,timer,disposed=false,busy=false
@@ -51,5 +55,5 @@ export function currentOffice({request,onData,onError,interval=10000}) {
     } catch(e) {if(valid())onError(e)}
     finally {busy=false;if(!disposed)timer=setTimeout(tick,interval)}
   }
-  return {start:tick, refresh(){generation++;clearTimeout(timer);cache.clear();if(!busy)void tick()},dispose(){disposed=true;generation++;clearTimeout(timer)}}
+  return {start(){clearTimeout(timer);return tick()}, refresh(){generation++;clearTimeout(timer);cache.clear();if(!busy)void tick()},dispose(){disposed=true;generation++;clearTimeout(timer)}}
 }

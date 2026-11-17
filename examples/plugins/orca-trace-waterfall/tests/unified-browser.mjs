@@ -23,14 +23,42 @@ try{
  assert.equal(await page.locator('#run').isVisible(),false)
  if(!live){assert.equal(state.people.length,1);assert.equal(state.people[0].tasks.length,2)}
  await page.locator('#view-office summary').click();await page.locator('.person-row').first().click()
+ await page.setViewportSize({width:420,height:990});const bounds=await page.locator('#drawer').boundingBox();assert.ok(bounds.y>=0 && bounds.y+bounds.height<=990);await page.screenshot({path:out+'/detail-420.png'});await page.setViewportSize({width:904,height:990})
+ await page.setViewportSize({width:420,height:990});const rect=await page.locator('#drawer').boundingBox();assert.ok(rect.y>=0 && rect.y+rect.height<=990,'drawer is readable at 420');await page.screenshot({path:out+'/drawer-420.png'});await page.keyboard.press('Escape');assert.equal(await page.locator('#drawer').isVisible(),false);await page.locator('.person-row').first().click()
  if(!live){assert.ok((await page.locator('#drawer').textContent()).includes('A message'));assert.ok((await page.locator('#drawer').textContent()).includes('B message'))}
  await page.locator('[data-flow]').first().click();const flow=await page.evaluate(()=>window.TraceTimeline.getState());if(!live)assert.equal(flow.runId,'A')
+ if(!live){
+   await page.locator('#chart-scroll').hover();await page.mouse.wheel(0,-120);await page.mouse.wheel(0,-120);await page.mouse.wheel(0,-120);await page.waitForTimeout(100)
+   const range=await page.evaluate(()=>window.TraceTimeline.getState().range)
+   await page.waitForTimeout(21000)
+   assert.deepEqual(await page.evaluate(()=>window.TraceTimeline.getState().range),range,'two polls retain zoom')
+   await page.evaluate(()=>{const read=window.orca.plugin.request;window.orca.plugin.request=async(n,d)=>{if(n==='trace.load' && d.runId==='H')await new Promise(r=>window.releaseH=r);const a=await read(n,d);if(n==='trace.live' && window.onlyA)a.runs=a.runs.filter(r=>r.id==='A');if(n==='trace.load' && window.newMessage)a.messages.push({id:'new',dispatchId:'d',body:'NEW A',type:'status'});return a}})
+   await page.locator('#history').click();await page.locator('#run').selectOption('H');await page.waitForFunction(()=>!!window.releaseH)
+   await page.locator('#vTime').click();await page.locator('[data-run]').first().click();await page.evaluate(()=>window.releaseH());await page.waitForTimeout(100)
+   assert.equal(await page.evaluate(()=>window.TraceTimeline.getState().runId),'A','late history cannot replace A')
+   for(const target of ['B','back']){
+     await page.locator('#history').click();await page.locator('#run').selectOption('H');await page.waitForFunction(()=>!!window.releaseH)
+     if(target==='back')await page.locator('#back').click()
+     else {await page.locator('#vTime').click();await page.locator('[data-run]').nth(1).click()}
+     await page.evaluate(()=>window.releaseH());await page.waitForTimeout(50)
+     assert.equal(await page.evaluate(()=>window.TraceTimeline.getState().runId),target==='back'?undefined:'B')
+   }
+   await page.evaluate(()=>{const read=window.orca.plugin.request;window.orca.plugin.request=async(n,d)=>{if(n==='trace.runs')await new Promise((r,j)=>window.rejectList=j);return read(n,d)}})
+   await page.locator('#history').click();await page.waitForFunction(()=>!!window.rejectList);await page.locator('#back').click();await page.evaluate(()=>window.rejectList(Error('late list failure')));await page.waitForTimeout(50);assert.equal(await page.evaluate(()=>window.TraceRedesign.getState().error),null)
+   await page.locator('#back').click();await page.locator('.person-row').first().click()
+   await page.evaluate(()=>{window.onlyA=true;window.newMessage=true});await page.locator('#refresh').evaluate(b=>b.click());await page.waitForFunction(()=>window.TraceRedesign.getState().people[0]?.tasks.length===1)
+   assert.ok((await page.locator('#drawer').textContent()).includes('NEW A'))
+   assert.equal(await page.locator('[data-flow]').count(),1)
+   await page.setViewportSize({width:420,height:990});const box=await page.locator('#drawer').boundingBox();assert.ok(box.y>=0 && box.y+60<990)
+   await page.screenshot({path:out+'/drawer-420.png'});await page.keyboard.press('Escape');assert.equal(await page.locator('#drawer').isVisible(),false)
+   await page.evaluate(()=>{window.onlyA=false;window.newMessage=false});await page.locator('#refresh').evaluate(b=>b.click())
+ }
  await page.locator('#back').click();assert.equal(await page.locator('#drawer').isVisible(),false)
  await page.screenshot({path:out+'/904.png'});await page.setViewportSize({width:420,height:990});await page.screenshot({path:out+'/420.png'});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth))
- if(!live){await page.evaluate(()=>window.mode='fail');await page.locator('#refresh').click();await page.waitForFunction(()=>window.TraceRedesign.getState().error);assert.ok((await page.evaluate(()=>window.TraceRedesign.getState())).office.bindings.every(p=>p.action==='idle'));await page.evaluate(()=>window.mode='empty');await page.locator('#refresh').click();await page.waitForFunction(()=>window.TraceRedesign.getState().people.length===0)}
+ if(!live){await page.evaluate(()=>window.mode='fail');await page.locator('#refresh').evaluate(b=>b.click());await page.waitForFunction(()=>window.TraceRedesign.getState().error);assert.ok((await page.evaluate(()=>window.TraceRedesign.getState())).office.bindings.every(p=>p.action==='idle'));await page.evaluate(()=>window.mode='empty');await page.locator('#refresh').evaluate(b=>b.click());await page.waitForFunction(()=>window.TraceRedesign.getState().people.length===0)}
  if(!live){
    await page.evaluate(()=>{window.mode='normal';const read=window.orca.plugin.request;window.orca.plugin.request=async(n,d)=>{const a=await read(n,d);if(n==='trace.load')for(let i=1;i<10;i++)a.nodes.push({...a.nodes[2],id:'d'+i,terminalId:'s'+i});return a}})
-   await page.locator('#refresh').click()
+   await page.locator('#refresh').evaluate(b=>b.click())
    await page.waitForFunction(()=>window.TraceRedesign.getState().people.length===10)
    await page.locator('#office-next').click()
    assert.equal(await page.evaluate(()=>window.TraceRedesign.getState().office.page),1)
