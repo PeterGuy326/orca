@@ -422,6 +422,7 @@ export function createScene({
     const raycaster = new THREE.Raycaster()
     const nameTags = managedActors ? actors.map((actor, index) => {
       const button = document.createElement('button')
+      button.dataset.officeActor=String(index)
       button.style.cssText = 'position:absolute;transform:translate(-50%,-100%);font-size:10px;z-index:2'
       listen(button, 'click', () => select(index))
       viewport.append(button)

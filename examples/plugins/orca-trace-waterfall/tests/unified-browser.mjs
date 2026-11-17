@@ -17,6 +17,22 @@ await page.addInitScript(({live})=>{window.mode='normal';window.orca={plugin:{as
 try{
  await page.goto('http://127.0.0.1:'+server.address().port+'/panel/index.html');await page.waitForFunction(()=>window.TraceRedesign?.getState().ready,null,{timeout:60000})
  const state=await page.evaluate(()=>window.TraceRedesign.getState())
+ if(!live){
+   await page.evaluate(()=>{window.reads=0;const read=window.orca.plugin.request;window.orca.plugin.request=async(n,d)=>{const a=await read(n,d);if(n==='trace.load')window.reads++;if(n==='trace.live' && window.order)a.runs=window.order.map(id=>({id,active:1}));return a}})
+   await page.locator('#vTime').click();await page.evaluate(()=>{window.oldA=document.querySelector('[data-run="A"]');window.order=['B','A']});let reads=await page.evaluate(()=>window.reads);await page.locator('#refresh').evaluate(b=>b.click());await page.waitForFunction(n=>window.reads>n,reads);await page.waitForTimeout(100);await page.evaluate(()=>window.oldA.click());assert.equal(await page.evaluate(()=>window.TraceTimeline.getState().runId),'A')
+   await page.locator('#back').click();await page.locator('#vTime').click();await page.evaluate(()=>{window.oldA=document.querySelector('[data-run="A"]');window.order=['B','C']});reads=await page.evaluate(()=>window.reads);await page.locator('#refresh').evaluate(b=>b.click());await page.waitForFunction(n=>window.reads>n,reads);await page.waitForTimeout(100);assert.equal(await page.locator('[data-run="A"]').count(),0);assert.equal(await page.locator('[data-run="C"]').count(),1);await page.evaluate(()=>window.oldA.click());assert.equal(await page.evaluate(()=>window.TraceTimeline.getState().runId),undefined)
+   await page.evaluate(()=>window.order=null);await page.locator('#refresh').evaluate(b=>b.click());await page.waitForTimeout(300);await page.locator('#back').click()
+   await page.locator('#view-office summary').click();await page.locator('.person-row').first().focus();await page.keyboard.press('Enter')
+   for(const selector of ['#close','[data-flow]','#drawer summary']){
+     await page.locator(selector).first().focus();const key=await page.evaluate(()=>document.activeElement.dataset.focusKey);const before=await page.evaluate(()=>window.reads)
+     await page.waitForTimeout(10500);assert.equal(await page.evaluate(()=>window.reads),before,'cache poll');assert.equal(await page.evaluate(()=>document.activeElement.dataset.focusKey),key)
+     await page.locator('#refresh').evaluate(b=>b.click());await page.waitForFunction(n=>window.reads>n,before);await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>document.activeElement.dataset.focusKey),key,'full-read poll')
+   }
+   await page.keyboard.press('Escape');assert.ok(await page.evaluate(()=>document.activeElement.classList.contains('person-row')))
+   await page.locator('[data-office-actor]').filter({visible:true}).first().focus();await page.keyboard.press('Enter');await page.locator('#close').click();assert.ok(await page.evaluate(()=>document.activeElement.hasAttribute('data-office-actor')))
+   await page.locator('#view-office summary').click()
+   await page.locator('[data-office-camera="room"]').click();await page.waitForTimeout(1800)
+ }
  const pose=()=>page.evaluate(()=>window.TraceRedesign.getState().office.engine.cameraPose)
  const before=await pose();await page.locator('canvas').hover();await page.mouse.wheel(120,30);await page.waitForTimeout(80);const pan=await pose();assert.equal(pan.zoom,before.zoom);assert.notDeepEqual(pan.target,before.target)
  await page.mouse.wheel(0,120);await page.waitForTimeout(80);assert.ok((await pose()).zoom<pan.zoom)
