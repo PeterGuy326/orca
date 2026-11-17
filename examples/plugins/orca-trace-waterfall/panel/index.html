@@ -2389,10 +2389,7 @@
         }
         document.getElementById('maxc').textContent = `∥${maxC}`
         document.getElementById('foot').textContent =
-          '实时读取 · ' +
-          answer.run.id +
-          ' · ' +
-          new Date().toLocaleTimeString('zh-CN', { hour12: false })
+          `实时读取 · ${answer.run.id} · ${new Date().toLocaleTimeString('zh-CN', { hour12: false })}`
       }
       function clearRun() {
         stopPlay()
