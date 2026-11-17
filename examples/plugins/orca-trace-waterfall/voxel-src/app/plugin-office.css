@@ -1,0 +1,219 @@
+.ov-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+  font:
+    11px/1.6 system-ui,
+    sans-serif;
+}
+.ov-heading span {
+  color: var(--muted);
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+.ov-main {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 265px;
+}
+.ov-stage {
+  position: relative;
+  min-height: 280px;
+  overflow: hidden;
+  background: #dce6e9;
+  --paper: #fffef8;
+  --wash: #edf2ef;
+  --line: #b9c6bd;
+  --ink: #293635;
+  --muted: #52666a;
+  --green-dark: #48664e;
+  --orange-dark: #a44b25;
+}
+#ovViewport {
+  position: absolute;
+  inset: 0;
+  min-height: 280px;
+}
+#ovViewport canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+#ovFallback {
+  position: absolute;
+  inset: 15px;
+  background: var(--paper);
+  color: #a44b25;
+  padding: 15px;
+}
+.ov-cameras {
+  position: absolute;
+  bottom: 7px;
+  left: 7px;
+  right: 7px;
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.ov-cameras button {
+  color: #293635;
+  background: #fffef8;
+  border: 1px solid #a9b9ac;
+  font-size: 10px;
+  padding: 5px 7px;
+}
+.ov-side {
+  overflow: auto;
+  min-width: 0;
+  padding: 8px;
+  border-left: 1px solid var(--border);
+  font:
+    11px/1.6 system-ui,
+    sans-serif;
+}
+#ovState {
+  margin: 0 0 6px;
+  overflow-wrap: anywhere;
+}
+#ovOverflow {
+  color: var(--orange);
+  margin: 4px 0;
+}
+.ov-worker {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 5px;
+  white-space: normal;
+  padding: 6px;
+}
+.ov-worker b,
+.ov-worker span {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 10px;
+}
+.ov-worker[aria-pressed='true'] {
+  border-color: var(--cyan);
+}
+#ovDetail h4 {
+  font-size: 11px;
+  margin: 9px 0 4px;
+  overflow-wrap: anywhere;
+}
+#ovDetail pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font:
+    10px/1.6 system-ui,
+    sans-serif;
+  max-height: 180px;
+  overflow: auto;
+  margin: 0;
+  background: var(--bg3);
+  padding: 7px;
+}
+.ov-deck {
+  padding: 6px 8px;
+  border-top: 1px solid var(--border);
+  flex: none;
+}
+.ov-row {
+  display: flex;
+  align-items: center;
+  gap: 5px 8px;
+  flex-wrap: wrap;
+}
+.ov-row + .ov-row {
+  margin-top: 5px;
+}
+.ov-row label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+}
+.ov-row output,
+#oLiveTag {
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+#oScrub {
+  flex: 1;
+  min-width: 80px;
+}
+#oSpeed {
+  width: 65px;
+}
+.ov-note {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font:
+    9px/1.5 system-ui,
+    sans-serif;
+}
+.task-toolbar {
+  top: auto;
+  bottom: 43px;
+  left: 7px;
+  right: 7px;
+  max-width: none;
+  padding: 5px 7px;
+  gap: 3px 7px;
+  background: #fffef8;
+  color: #293635;
+}
+.task-toolbar button {
+  color: #293635;
+  background: #fffef8;
+  font-size: 10px;
+  padding: 3px 5px;
+  min-height: 26px;
+}
+.task-brand {
+  font-size: 10px;
+}
+.display-reader {
+  bottom: 88px;
+}
+[hidden] {
+  display: none !important;
+}
+@media (max-width: 700px) {
+  .ov-main {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+  }
+  .ov-stage {
+    min-height: 330px;
+    height: 48vh;
+    flex: none;
+  }
+  .ov-side {
+    overflow: visible;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+  .ov-worker {
+    width: 100%;
+  }
+  .ov-deck {
+    max-height: 190px;
+    overflow: auto;
+  }
+  .ov-heading b {
+    font-size: 10px;
+  }
+  .task-toolbar .task-brand {
+    width: auto;
+  }
+  .task-toolbar {
+    bottom: 44px;
+    justify-content: flex-start;
+  }
+}

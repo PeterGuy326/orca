@@ -1,0 +1,7 @@
+node_modules/
+.orca/
+redesign/dist/
+redesign/data/
+redesign/evidence/
+*.png
+*.tar.gz

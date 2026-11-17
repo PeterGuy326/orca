@@ -1,0 +1,28 @@
+{
+  "manifestVersion": 2,
+  "id": "orca-trace-waterfall",
+  "name": "Orca Trace Waterfall",
+  "version": "0.1.0",
+  "description": "Orchestration runs, tasks and workers as an inspectable waterfall timeline.",
+  "engines": {
+    "orca": ">=1.4.250"
+  },
+  "execution": "trusted-worker",
+  "pluginApi": 1,
+  "main": "src/worker.ts",
+  "contributes": {
+    "panels": [
+      {
+        "id": "orca-trace-waterfall",
+        "title": "Trace Waterfall",
+        "icon": "bar-chart-3",
+        "entry": "panel/index.html"
+      }
+    ]
+  },
+  "capabilities": [
+    {
+      "kind": "storage:own"
+    }
+  ]
+}

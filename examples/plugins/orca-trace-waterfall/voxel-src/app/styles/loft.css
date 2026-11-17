@@ -1,0 +1,7 @@
+/* Scene-specific accents; navigation is shared by every website page. */
+.office-loft .live-dot {
+  background: var(--orange);
+}
+.office-loft .scene-caption {
+  color: var(--green-dark);
+}
