@@ -410,7 +410,12 @@ export function createScene({
       renderer.setSize(width, height)
       renderer.domElement.style.imageRendering = pixelated ? 'pixelated' : 'auto'
     }
-    const resizeObserver = new ResizeObserver(resize)
+    let resizeFrame = null
+    const resizeObserver = new ResizeObserver(() => {
+      cancelAnimationFrame(resizeFrame)
+      resizeFrame = requestAnimationFrame(resize)
+    })
+    lifetime.add(() => cancelAnimationFrame(resizeFrame))
     lifetime.add(() => resizeObserver.disconnect())
     resizeObserver.observe(viewport)
     resize()
@@ -503,6 +508,23 @@ export function createScene({
     controls.addEventListener('start', () => {
       cameraTween = null
     })
+    renderer.domElement.addEventListener(
+      'wheel',
+      (event) => {
+        const width = renderer.domElement.clientWidth
+        if (!controls.enabled || !width || Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return
+        event.preventDefault()
+        event.stopImmediatePropagation()
+        cameraTween = null
+        const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? width : 1
+        const offset = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0)
+        offset.multiplyScalar(event.deltaX * unit * (camera.right - camera.left) / camera.zoom / width)
+        camera.position.add(offset)
+        controls.target.add(offset)
+        controls.update()
+      },
+      { capture: true, passive: false, signal: aborter.signal }
+    )
     listen(renderer.domElement, 'webglcontextlost', (e) => {
       e.preventDefault()
       setPaused(true)
@@ -623,6 +645,11 @@ export function createScene({
         pixelated,
         flexibility: flex,
         camera: cameraMode,
+        cameraPose: {
+          position: camera.position.toArray(),
+          target: controls.target.toArray(),
+          zoom: camera.zoom
+        },
         lighting: currentLighting,
         actors: actors.map((a) => ({
           instanceId: a.config.instanceId,

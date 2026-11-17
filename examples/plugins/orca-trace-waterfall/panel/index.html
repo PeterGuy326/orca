@@ -925,14 +925,16 @@
       #detail { display:none; }
       #foot { flex:none; }
       #redesign .workspace { display:block; padding:0; }
-      #redesign .office-stage { height:calc(100vh - 155px); min-height:300px; position:relative; }
+      #redesign .office-stage { height:calc(100vh - 80px); min-height:300px; position:relative; }
       #redesign #office-viewport { width:100%; height:100%; }
       #redesign #drawer { background:var(--bg2); border:1px solid var(--border); padding:12px; max-height:65vh; overflow:auto; }
       #redesign #drawer pre { white-space:pre-wrap; overflow-wrap:anywhere; font:inherit; }
       #redesign #drawer h2 { font:inherit; font-weight:600; }
       #redesign #notice { padding:8px 12px; color:var(--red); }
-      #redesign .office-page { display:flex; align-items:center; justify-content:space-between; gap:6px; }
-      #redesign #office-source { margin:4px 8px; }
+      #redesign .office-status { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:4px 8px; background:var(--bg2); border-top:1px solid var(--border); }
+      #redesign .office-page { display:flex; align-items:center; gap:6px; }
+      #redesign #office-source { margin:0; }
+      #redesign .office-status details[open] { width:100%; }
       #redesign #office-locator:empty { display:none; }
       #redesign .person-row { width:100%; text-align:left; display:flex; justify-content:space-between; gap:8px; }
       #redesign .office-cameras { display:flex; position:absolute; top:8px; left:8px; gap:4px; }
@@ -1018,10 +1020,13 @@
               <div id="office-viewport" tabindex="0" aria-label="动态办公室：拖拽旋转、滚轮缩放、点人物看任务"></div>
               <div class="office-cameras"><button data-office-camera="room">全景</button><button data-office-camera="person">近景</button><button data-office-camera="top">俯视</button><button id="office-computer">电脑</button></div>
             </div>
-            <div class="office-page"><button id="office-prev">上一页</button><span id="office-page"></span><button id="office-next">下一页</button></div>
-            <p id="office-source" class="muted"></p><p id="office-locator" role="status"></p>
+            <div class="office-status">
+              <span id="office-source"></span>
+              <div class="office-page"><button id="office-prev">上一页</button><span id="office-page"></span><button id="office-next">下一页</button></div>
+              <details><summary>会话名单</summary><div id="office-roster" class="office-roster"></div></details>
+            </div>
+            <p id="office-locator" role="status"></p>
           </div>
-          <details><summary>会话名单</summary><div id="office-roster" class="office-roster"></div></details>
         </section>
         <aside id="drawer" hidden aria-label="任务对话详情"></aside>
       </main>
@@ -1630,6 +1635,7 @@
         document.getElementById('vTeam').classList.toggle('on', v === 'team')
         document.getElementById('vOffice').classList.toggle('on', v === 'office')
         document.getElementById('wrap').style.display = v === 'timeline' ? 'flex' : 'none'
+        document.getElementById('foot').style.display = v === 'office' ? 'none' : 'block'
         document.getElementById('legend').style.display = v === 'timeline' ? 'flex' : 'none'
         document.querySelector('.toggles').style.display = v === 'timeline' ? 'flex' : 'none'
         document.getElementById('teamwrap').style.display = v === 'team' ? 'flex' : 'none'
@@ -2228,14 +2234,37 @@
           '</span>'
       }
       function applyRunAnswer(answer) {
+        const previous = D?.run.id === answer.run.id && (t0 !== FULL[0] || t1 !== FULL[1])
+          ? [t0, t1] : null
+        if (D?.run.id !== answer.run.id) clearRun()
         processData(answer)
+        if (previous) {
+          const span = Math.min(previous[1] - previous[0], FULL[1] - FULL[0])
+          t0 = Math.max(FULL[0], Math.min(previous[0], FULL[1] - span))
+          t1 = t0 + span
+        }
         buildLabels()
         if (view === 'timeline') render()
         document.getElementById('maxc').textContent = '∥' + maxC
         document.getElementById('foot').textContent =
           '实时读取 · ' + answer.run.id + ' · ' + new Date().toLocaleTimeString('zh-CN', {hour12:false})
       }
-      window.TraceTimeline = { apply: applyRunAnswer, show: setView }
+      function clearRun() {
+        stopPlay()
+        drag = null
+        D = null
+        details = {}
+        msgMap = {}
+        detail.style.display = 'none'
+        detail.replaceChildren()
+        svg.replaceChildren()
+        labelsEl.replaceChildren()
+        document.getElementById('maxc').textContent = ''
+      }
+      window.TraceTimeline = {
+        apply: applyRunAnswer, show: setView, clear: clearRun,
+        getState: () => ({runId:D?.run.id, range:[t0,t1], full:[...FULL], nodes:D?.nodes.length ?? 0})
+      }
       setView('office')
     </script>
   </body>

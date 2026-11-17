@@ -10,6 +10,7 @@ const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&
 let model = null, selected = null, visible = true, error = null
 const office = createOfficeView({ root: root.querySelector('#view-office'), onTask: showTask })
 function showTask(id, scroll = true) {
+  if (model?.data.run.id !== select.value) return
   selected = id
   const row = model?.rows.find(row => row.id === id)
   drawer.hidden = !row
@@ -22,14 +23,25 @@ function fail(reason) {
   error = reason?.message || String(reason)
   office.fail()
   notice.hidden = false
-  notice.textContent = '读取失败 / unknown：' + error
+  notice.textContent = '读取失败 / unknown：' + error + retainedRun()
   document.getElementById('refresh').hidden = false
-  document.getElementById('foot').textContent = '读取失败，保留上次记录，人物停止工作。'
+  document.getElementById('foot').textContent = '读取失败 · 选择 ' + select.value + retainedRun() + '；人物停止工作。'
+}
+function retainedRun() {
+  return model ? '；办公室保留上次记录：' + model.data.run.id : ''
+}
+function mergeRuns(runs) {
+  for (const run of runs) {
+    const option = [...select.options].find(option => option.value === run.id)
+    if (option) option.textContent = run.objective || run.id
+    else select.add(new Option(run.objective || run.id, run.id))
+  }
 }
 const live = createHostLive({
   request: (name, data) => orca.plugin.request(name, data),
   selectedRun: () => select.value,
   followActive: () => false,
+  onRuns: mergeRuns,
   selectRun(id, title) {
     if (![...select.options].some(option => option.value === id)) select.add(new Option(title || id, id))
     select.value = id
@@ -47,7 +59,7 @@ const live = createHostLive({
     model = adaptRun({data, liveSummary: summary, capturedAt:new Date().toISOString()})
     office.setData(model)
     window.TraceTimeline.apply(data)
-    if (changed) { selected = null; drawer.hidden = true }
+    if (changed) { selected = null; drawer.hidden = true; drawer.replaceChildren() }
     if (selected) showTask(selected, false)
   },
   onError: fail
@@ -61,7 +73,12 @@ window.PrototypeRedesign = {getState: () => ({ready:Boolean(model), ...window.Tr
 select.onchange = () => {
   selected = null
   drawer.hidden = true
+  drawer.replaceChildren()
+  window.TraceTimeline.clear()
   office.fail()
+  notice.hidden = false
+  notice.textContent = '正在读取 ' + select.value + retainedRun()
+  document.getElementById('foot').textContent = '正在读取 · ' + select.value + retainedRun()
   live.changed()
 }
 async function init() {

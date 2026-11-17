@@ -108,13 +108,14 @@ export function createOfficeView({ root, onTask }) {
       roster.append(button)
     }
     const pages = Math.max(1, Math.ceil(slots.size / 9))
-    root.querySelector('#office-page').textContent =
-      `第 ${page + 1} / ${pages} 页 · ${entities().length} 个真实会话 · 每页 9 席${pages > 1 ? '，其余会话见下一页及完整名单' : ''}`
+    root.querySelector('.office-page').hidden = pages <= 1
+    root.querySelector('#office-page').textContent = `${page + 1}/${pages}`
     root.querySelector('#office-prev').disabled = page === 0
     root.querySelector('#office-next').disabled = page >= pages - 1
     root.querySelector('#office-source').textContent = model
-      ? `更新于 ${new Date(model.capturedAt).toLocaleTimeString('zh-CN', { hour12: false })} · ${model.bundle.liveSummary?.active || 0} 个活跃派发`
+      ? `${entities().length} 个会话 · ${model.bundle.liveSummary?.active || 0} 个活跃 · ${new Date(model.capturedAt).toLocaleTimeString('zh-CN', { hour12: false })}更新`
       : '暂无快照'
+    root.querySelector('#office-source').title = `来源：Orca · ${runId || ''}`
   }
   function focusTask(taskId) {
     const row = model?.rows.find((item) => item.id === taskId),
