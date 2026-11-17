@@ -40,8 +40,8 @@ function scan(code) {
 }
 try {
   const directives =
-    /\/\* oxlint-(?:disable|enable) typescript\/(?:switch-exhaustiveness-check|restrict-template-expressions)(?: --[^*]*)? \*\//g
-  assert.equal([...bundle.matchAll(directives)].length, 4)
+    /\/\/ oxlint-disable-next-line typescript\/(?:switch-exhaustiveness-check|restrict-template-expressions) --[^\n]*/g
+  assert.equal([...bundle.matchAll(directives)].length, 2)
   const original = scan(bundle.replace(directives, ''))
   assert.deepEqual(original.map((d) => d.code).sort(), expected)
   assert.deepEqual(scan(bundle), [])

@@ -97,12 +97,16 @@ export function scopeThreeTypeLint(chunk, version) {
         'Mapping outside Three statement'
       )
     })
+    assert.ok(
+      !chunk.code.slice(generated.start, generated.end).includes('\n'),
+      'Expected one generated statement line'
+    )
     return { start: generated.start, end: generated.end, rule: target.rule }
   })
   let code = chunk.code
   for (const range of ranges.toSorted((a, b) => b.start - a.start)) {
-    const before = `\n/* oxlint-disable ${range.rule} -- Verified Three 0.180.0 statement; see bundle-type-lint.mjs. */\n`
-    const after = `\n/* oxlint-enable ${range.rule} */\n`
+    const before = `\n// oxlint-disable-next-line ${range.rule} -- Verified Three 0.180.0 statement; see bundle-type-lint.mjs.\n`
+    const after = '\n'
     code =
       code.slice(0, range.start) +
       before +
