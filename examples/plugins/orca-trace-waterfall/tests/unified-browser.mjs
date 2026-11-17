@@ -15,6 +15,9 @@ const server = http.createServer(async (req, res) => {
   try {
     const u = new URL(req.url, 'http://localhost')
     if (u.pathname === '/rpc') {
+      if (!['trace.live', 'trace.load', 'trace.runs'].includes(u.searchParams.get('n'))) {
+        throw new Error('Only trace read handlers are allowed')
+      }
       const args = [
         'plugin',
         'dev',
@@ -49,7 +52,7 @@ const server = http.createServer(async (req, res) => {
 await new Promise((r) => server.listen(0, '127.0.0.1', r))
 const browser = await chromium.launch({
   headless: true,
-  executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  channel: 'chrome',
   args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
 })
 const page = await browser.newPage({ viewport: { width: 904, height: 990 } }),
