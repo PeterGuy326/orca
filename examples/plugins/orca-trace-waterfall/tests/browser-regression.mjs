@@ -133,6 +133,18 @@ try {
   await page.locator('[data-run="run_second"]').click()
   await page.waitForFunction(() => window.PrototypeRedesign.getState().runId === 'run_second')
   assert.equal(await page.locator('#drawer').isVisible(), false)
+  await page.evaluate(() => {
+    const option = document.createElement('option')
+    option.value = 'run_missing'
+    option.textContent = 'Synthetic missing Run'
+    document.querySelector('#run').append(option)
+  })
+  await page.locator('#run').selectOption('run_missing')
+  await page.waitForFunction(() => window.PrototypeRedesign.getState().error === '读取失败')
+  assert.equal(await page.evaluate(() => window.PrototypeRedesign.getState().runId), 'run_second')
+  assert.equal(await page.locator('#notice').isVisible(), true)
+  await page.locator('#run').selectOption('run_second')
+  await page.waitForFunction(() => window.PrototypeRedesign.getState().error === null)
   await page.evaluate(() => (window.__readError = true))
   await page.locator('#snapshot-refresh').click()
   await page.waitForFunction(() => window.PrototypeRedesign.getState().error === '读取失败')

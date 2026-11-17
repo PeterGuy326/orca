@@ -745,6 +745,18 @@ window.addEventListener(
   { once: true }
 )
 window.TraceRedesign = {
+  fail() {
+    state.generation++
+    aborter?.abort()
+    state.error = '读取失败'
+    office.fail()
+    announce(
+      state.model
+        ? `读取失败，仍展示 ${dateTime(state.model.capturedAt)} 的上次快照。人物工作动画已停止，请重新选择记录或重试。`
+        : '暂时无法读取协作记录，请重试。',
+      true
+    )
+  },
   setData(data, liveSummary) {
     setBundle({ data, liveSummary, capturedAt: new Date().toISOString() })
   },
