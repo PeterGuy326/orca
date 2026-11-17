@@ -63,7 +63,8 @@ export function adaptRun(bundle) {
         .map((node) => node.terminalId || node.id)
     )
   ]
-  const captured = typeof bundle.capturedAt === 'number' ? bundle.capturedAt : Date.parse(bundle.capturedAt)
+  const captured =
+    typeof bundle.capturedAt === 'number' ? bundle.capturedAt : Date.parse(bundle.capturedAt)
   const rows = data.nodes
     .filter((node) => node.kind === 'task')
     .map((task) => {

@@ -697,7 +697,11 @@ async function loadRun(db: string, runId: string, terminals: Terminal[] | null) 
       node.delivery = deliveryOf(node.output || '', node.status)
     }
   }
-  const outcomes = taskNodes.map((node) => ({ nodeId: node.id, goal: node.goal, ...node.delivery }))
+  const outcomes = taskNodes.map((node) => ({
+    nodeId: node.id,
+    goal: node.goal,
+    ...node.delivery
+  }))
   return {
     run: { id: String(run.id), objective: String(run.objective ?? ''), shortTitle: root.goal },
     outcomes,
@@ -739,11 +743,17 @@ export function createTracePager() {
     let id = input.snapshotId
     if (!id) {
       const text = JSON.stringify(value)
-      if (Buffer.byteLength(text) <= 512 * 1024) return value
-      for (const [key, snapshot] of snapshots) {
-        if (Date.now() - snapshot.at > 120000) snapshots.delete(key)
+      if (Buffer.byteLength(text) <= 512 * 1024) {
+        return value
       }
-      while (snapshots.size >= 4) snapshots.delete(snapshots.keys().next().value!)
+      for (const [key, snapshot] of snapshots) {
+        if (Date.now() - snapshot.at > 120000) {
+          snapshots.delete(key)
+        }
+      }
+      while (snapshots.size >= 4) {
+        snapshots.delete(snapshots.keys().next().value!)
+      }
       id = randomUUID()
       snapshots.set(id, { runId: input.runId, text, at: Date.now() })
     }
@@ -752,12 +762,25 @@ export function createTracePager() {
       throw new Error('分段读取已过期或 Run 不匹配，请重试')
     }
     const offset = input.offset ?? 0
-    if (!Number.isInteger(offset) || offset < 0 || offset >= snapshot.text.length || offset % size !== 0) {
+    if (
+      !Number.isInteger(offset) ||
+      offset < 0 ||
+      offset >= snapshot.text.length ||
+      offset % size !== 0
+    ) {
       throw new Error('无效分段位置')
     }
     const chunk = snapshot.text.slice(offset, offset + size)
     const nextOffset = offset + chunk.length < snapshot.text.length ? offset + chunk.length : null
-    return { paged: true, runId: input.runId, snapshotId: id, offset, total: snapshot.text.length, chunk, nextOffset }
+    return {
+      paged: true,
+      runId: input.runId,
+      snapshotId: id,
+      offset,
+      total: snapshot.text.length,
+      chunk,
+      nextOffset
+    }
   }
 }
 
@@ -767,8 +790,15 @@ export default function activate(orca: OrcaWorkerApi): void {
   orca.panels.handle('trace.live', async () =>
     sanitize({ now: Date.now(), runs: await liveRuns(dbPath()) })
   )
-  orca.panels.handle('trace.load', async (input: { runId: string; snapshotId?: string; offset?: number }) =>
-    page(input, input.snapshotId ? undefined : sanitize(await loadRun(dbPath(), String(input.runId), await liveTerminals())))
+  orca.panels.handle(
+    'trace.load',
+    async (input: { runId: string; snapshotId?: string; offset?: number }) =>
+      page(
+        input,
+        input.snapshotId
+          ? undefined
+          : sanitize(await loadRun(dbPath(), String(input.runId), await liveTerminals()))
+      )
   )
   orca.panels.handle('trace.session.open', async (input: { session: Session }) =>
     openSession(input.session)

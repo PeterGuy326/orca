@@ -19,26 +19,16 @@ export function createOfficeView({ root, onTask }) {
     picks = 0
   const layout = structuredClone(getLayout('suite'))
   const entities = () => people ?? source.getState().bindings
-  const binding = (entity) => ({ ...entity, slot: slots.get(entity.id) % 9 })
   const current = () => entities().filter((entity) => Math.floor(slots.get(entity.id) / 9) === page)
-  const feed = {
-    kind: 'orca',
-    label: 'Orca 实时协作',
-    getSnapshot: source.getSnapshot,
-    getBindings: () => current().map(binding),
-    subscribe(listener) {
-      listeners.add(listener)
-      return () => listeners.delete(listener)
-    },
-    dispose() {}
-  }
   const notify = () => {
     for (const listener of listeners) {
       listener({ type: 'snapshot', snapshot: source.getSnapshot() })
     }
   }
   function rowFor(entity) {
-    if(entity.taskRow) return entity.taskRow
+    if (entity.taskRow) {
+      return entity.taskRow
+    }
     const node = model?.byId.get(entity.dispatchId)
     return model?.rows.find((row) => row.id === node?.taskId || row.id === node?.parentId)
   }
@@ -102,12 +92,14 @@ export function createOfficeView({ root, onTask }) {
       button.onclick = () => {
         if (row) {
           onTask(row.id, entity)
-          page = Math.floor(seat / 9); notify(); paint()
+          page = Math.floor(seat / 9)
+          notify()
+          paint()
         }
       }
       roster.append(button)
     }
-    const pages = Math.max(1, Math.ceil((Math.max(-1,...slots.values())+1) / 9))
+    const pages = Math.max(1, Math.ceil((Math.max(-1, ...slots.values()) + 1) / 9))
     root.querySelector('.office-page').hidden = pages <= 1
     root.querySelector('#office-page').textContent = `${page + 1}/${pages}`
     root.querySelector('#office-prev').disabled = page === 0
@@ -115,7 +107,8 @@ export function createOfficeView({ root, onTask }) {
     root.querySelector('#office-source').textContent = model
       ? `${entities().length} 个会话 · 数据 ${new Date(model.capturedAt).toLocaleTimeString('zh-CN', { hour12: false })}`
       : '暂无快照'
-    root.querySelector('#office-source').title = '仅 Orca 原生派发，未覆盖外部会话；10秒查列表，最多15秒复用记录'
+    root.querySelector('#office-source').title =
+      '仅 Orca 原生派发，未覆盖外部会话；10秒查列表，最多15秒复用记录'
   }
   function focusTask(taskId) {
     const row = model?.rows.find((item) => item.id === taskId),
@@ -164,16 +157,33 @@ export function createOfficeView({ root, onTask }) {
   }
   return {
     setPeople(next, models) {
-      people=next
-      for(const id of slots.keys())if(!people.some(p=>p.id===id))slots.delete(id)
-      const used=new Set(slots.values())
-      for(const person of people)if(!slots.has(person.id)) {
-        let seat=0;while(used.has(seat))seat++
-        slots.set(person.id,seat);used.add(seat)
+      people = next
+      for (const id of slots.keys()) {
+        if (!people.some((p) => p.id === id)) {
+          slots.delete(id)
+        }
       }
-      model={data:{run:{id:'current'}},byId:new Map(),rows:[],bundle:{liveSummary:{active:people.filter(p=>p.action!=='idle').length}},capturedAt:models.length?Math.min(...models.map(m=>m.capturedAt)):Date.now()}
-      page=Math.min(page,Math.max(0,Math.ceil((Math.max(-1,...slots.values())+1)/9)-1))
-      notify();paint()
+      const used = new Set(slots.values())
+      for (const person of people) {
+        if (!slots.has(person.id)) {
+          let seat = 0
+          while (used.has(seat)) {
+            seat++
+          }
+          slots.set(person.id, seat)
+          used.add(seat)
+        }
+      }
+      model = {
+        data: { run: { id: 'current' } },
+        byId: new Map(),
+        rows: [],
+        bundle: { liveSummary: { active: people.filter((p) => p.action !== 'idle').length } },
+        capturedAt: models.length ? Math.min(...models.map((m) => m.capturedAt)) : Date.now()
+      }
+      page = Math.min(page, Math.max(0, Math.ceil((Math.max(-1, ...slots.values()) + 1) / 9) - 1))
+      notify()
+      paint()
     },
     setData(next) {
       if (model?.data.run.id !== next.data.run.id) {
@@ -214,7 +224,9 @@ export function createOfficeView({ root, onTask }) {
     },
     focusTask,
     fail() {
-      if(people)people=people.map(p=>({...p,action:'idle',state:'unknown',label:'读取失败'}))
+      if (people) {
+        people = people.map((p) => ({ ...p, action: 'idle', state: 'unknown', label: '读取失败' }))
+      }
       source.fail('读取失败，工作动画已停止')
       notify()
       paint()
