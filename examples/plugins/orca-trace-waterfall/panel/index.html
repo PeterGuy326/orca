@@ -915,46 +915,165 @@
       #oRoster::-webkit-scrollbar-thumb:hover {
         background: var(--muted);
       }
-      [hidden] { display:none !important; }
-      body > header { flex-wrap:nowrap; }
-      body > header .seg { order:0; }
-      #run { order:1; flex:1; min-width:0; max-width:none; }
-      #current-title { max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-      body > header .toggles { display:none !important; }
-      #wrap { display:none; min-height:200px; }
-      #legend { display:none; }
-      #detail { display:none; }
-      #foot { flex:none; }
-      #redesign .workspace { display:block; padding:0; }
-      #redesign .office-stage { height:calc(100vh - 80px); min-height:300px; position:relative; }
-      #redesign #office-viewport { width:100%; height:100%; }
-      #redesign #drawer { position:fixed; bottom:0; left:0; right:0; z-index:10; background:var(--bg2); border:1px solid var(--border); padding:12px; max-height:65vh; overflow:auto; }
-      #redesign #drawer pre { white-space:pre-wrap; overflow-wrap:anywhere; font:inherit; }
-      #redesign #drawer h2 { font:inherit; font-weight:600; }
-      #redesign #notice { padding:8px 12px; color:var(--red); }
-      #redesign .office-status { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:4px 8px; background:var(--bg2); border-top:1px solid var(--border); }
-      #redesign .office-page { display:flex; align-items:center; gap:6px; }
-      #redesign #office-source { margin:0; }
-      #redesign .office-status details[open] { width:100%; }
-      #redesign #office-locator:empty { display:none; }
-      #redesign .person-row { width:100%; text-align:left; display:flex; justify-content:space-between; gap:8px; }
-      #redesign .office-cameras { display:flex; position:absolute; top:8px; left:8px; gap:4px; }
-      #redesign .office-roster { display:grid; gap:4px; padding:8px; }
-      #redesign .task-toolbar { display:none !important; }
-      #redesign { --paper:var(--bg2); --wash:var(--bg); --line:var(--border); --ink:var(--fg); }
-      #redesign #office-viewport canvas { display:block; width:100%; height:100%; touch-action:none; }
-      #redesign .muted { color:var(--muted); }
-      @media(max-width:500px) { #labels {width:100px} header {gap:6px;padding:8px} #redesign .office-page {font-size:10px} }
+      [hidden] {
+        display: none !important;
+      }
+      body > header {
+        flex-wrap: nowrap;
+      }
+      body > header .seg {
+        order: 0;
+      }
+      #run {
+        order: 1;
+        flex: 1;
+        min-width: 0;
+        max-width: none;
+      }
+      #current-title {
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      body > header .toggles {
+        display: none !important;
+      }
+      #wrap {
+        display: none;
+        min-height: 200px;
+      }
+      #legend {
+        display: none;
+      }
+      #detail {
+        display: none;
+      }
+      #foot {
+        flex: none;
+      }
+      #redesign .workspace {
+        display: block;
+        padding: 0;
+      }
+      #redesign .office-stage {
+        height: calc(100vh - 80px);
+        min-height: 300px;
+        position: relative;
+      }
+      #redesign #office-viewport {
+        width: 100%;
+        height: 100%;
+      }
+      #redesign #drawer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        padding: 12px;
+        max-height: 65vh;
+        overflow: auto;
+      }
+      #redesign #drawer pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font: inherit;
+      }
+      #redesign #drawer h2 {
+        font: inherit;
+        font-weight: 600;
+      }
+      #redesign #notice {
+        padding: 8px 12px;
+        color: var(--red);
+      }
+      #redesign .office-status {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 8px;
+        background: var(--bg2);
+        border-top: 1px solid var(--border);
+      }
+      #redesign .office-page {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      #redesign #office-source {
+        margin: 0;
+      }
+      #redesign .office-status details[open] {
+        width: 100%;
+      }
+      #redesign #office-locator:empty {
+        display: none;
+      }
+      #redesign .person-row {
+        width: 100%;
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      #redesign .office-cameras {
+        display: flex;
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        gap: 4px;
+      }
+      #redesign .office-roster {
+        display: grid;
+        gap: 4px;
+        padding: 8px;
+      }
+      #redesign .task-toolbar {
+        display: none !important;
+      }
+      #redesign {
+        --paper: var(--bg2);
+        --wash: var(--bg);
+        --line: var(--border);
+        --ink: var(--fg);
+      }
+      #redesign #office-viewport canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+      #redesign .muted {
+        color: var(--muted);
+      }
+      @media (max-width: 500px) {
+        #labels {
+          width: 100px;
+        }
+        header {
+          gap: 6px;
+          padding: 8px;
+        }
+        #redesign .office-page {
+          font-size: 10px;
+        }
+      }
     </style>
   </head>
   <body>
     <header>
       <h1 id="title" hidden>Trace Waterfall</h1>
-      <span id="current-title">当前协作</span><button id="back">返回</button><button id="history">历史</button>
+      <span id="current-title">当前协作</span><button id="back">返回</button
+      ><button id="history">历史</button>
       <select id="run" hidden></select>
       <button id="refresh" hidden>重试读取</button>
       <div class="seg">
-        <button id="vOffice" class="on">办公室</button><button id="vTime">瀑布图</button><button id="vTeam" hidden>团队</button>
+        <button id="vOffice" class="on">办公室</button><button id="vTime">瀑布图</button
+        ><button id="vTeam" hidden>团队</button>
       </div>
       <div class="stats" id="stats" hidden></div>
       <div class="toggles">
@@ -1013,19 +1132,33 @@
       </div>
     </div>
     <div id="officewrap" hidden></div>
-    <div id="redesign" style="flex:1;min-height:0;overflow:auto">
+    <div id="redesign" style="flex: 1; min-height: 0; overflow: auto">
       <div id="notice" role="status" hidden></div>
       <main class="workspace">
         <section id="view-office" aria-label="动态办公室">
           <div class="office-card">
             <div id="office-stage" class="office-stage">
-              <div id="office-viewport" tabindex="0" aria-label="动态办公室：拖拽旋转、滚轮缩放、点人物看任务"></div>
-              <div class="office-cameras"><button data-office-camera="room">全景</button><button data-office-camera="person">近景</button><button data-office-camera="top">俯视</button></div>
+              <div
+                id="office-viewport"
+                tabindex="0"
+                aria-label="动态办公室：拖拽旋转、滚轮缩放、点人物看任务"
+              ></div>
+              <div class="office-cameras">
+                <button data-office-camera="room">全景</button
+                ><button data-office-camera="person">近景</button
+                ><button data-office-camera="top">俯视</button>
+              </div>
             </div>
             <div class="office-status">
               <span id="office-source"></span>
-              <div class="office-page"><button id="office-prev">上一页</button><span id="office-page"></span><button id="office-next">下一页</button></div>
-              <details><summary>会话名单</summary><div id="office-roster" class="office-roster"></div></details>
+              <div class="office-page">
+                <button id="office-prev">上一页</button><span id="office-page"></span
+                ><button id="office-next">下一页</button>
+              </div>
+              <details>
+                <summary>会话名单</summary>
+                <div id="office-roster" class="office-roster"></div>
+              </details>
             </div>
             <p id="office-locator" role="status"></p>
           </div>
@@ -1282,7 +1415,7 @@
                 if (!reply || m.at < reply.at) reply = m
               }
             }
-            const end = reply ? reply.at : dp.end ?? Date.now()
+            const end = reply ? reply.at : (dp.end ?? Date.now())
             if (end > q.at)
               rawWaits.push({
                 dispatch: dp.id,
@@ -1389,9 +1522,12 @@
         nodes.forEach((n) => (details[n.id] = n))
         msgMap = {}
         messages.forEach((m) => (msgMap[m.id] = m))
-        const points = nodes.flatMap(node => [node.start, node.end]).concat(messages.map(message => message.at)).filter(Number.isFinite)
+        const points = nodes
+          .flatMap((node) => [node.start, node.end])
+          .concat(messages.map((message) => message.at))
+          .filter(Number.isFinite)
         const start = Math.min(...points)
-        const end = Math.max(...points, ...bars.map(bar => bar.end))
+        const end = Math.max(...points, ...bars.map((bar) => bar.end))
         FULL = [start, Math.max(start + 1000, end)]
         t0 = FULL[0]
         t1 = FULL[1]
@@ -2236,8 +2372,8 @@
           '</span>'
       }
       function applyRunAnswer(answer) {
-        const previous = D?.run.id === answer.run.id && (t0 !== FULL[0] || t1 !== FULL[1])
-          ? [t0, t1] : null
+        const previous =
+          D?.run.id === answer.run.id && (t0 !== FULL[0] || t1 !== FULL[1]) ? [t0, t1] : null
         if (D?.run.id !== answer.run.id) clearRun()
         processData(answer)
         if (previous) {
@@ -2249,7 +2385,10 @@
         if (view === 'timeline') render()
         document.getElementById('maxc').textContent = '∥' + maxC
         document.getElementById('foot').textContent =
-          '实时读取 · ' + answer.run.id + ' · ' + new Date().toLocaleTimeString('zh-CN', {hour12:false})
+          '实时读取 · ' +
+          answer.run.id +
+          ' · ' +
+          new Date().toLocaleTimeString('zh-CN', { hour12: false })
       }
       function clearRun() {
         stopPlay()
@@ -2264,8 +2403,15 @@
         document.getElementById('maxc').textContent = ''
       }
       window.TraceTimeline = {
-        apply: applyRunAnswer, show: setView, clear: clearRun,
-        getState: () => ({runId:D?.run.id, range:[t0,t1], full:[...FULL], nodes:D?.nodes.length ?? 0})
+        apply: applyRunAnswer,
+        show: setView,
+        clear: clearRun,
+        getState: () => ({
+          runId: D?.run.id,
+          range: [t0, t1],
+          full: [...FULL],
+          nodes: D?.nodes.length ?? 0
+        })
       }
       setView('office')
     </script>
