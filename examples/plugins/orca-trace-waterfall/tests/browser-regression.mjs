@@ -177,6 +177,8 @@ try {
     await page.waitForFunction(id=>window.TraceRedesign.getState().runId===id,runId,{timeout:15000})
   }
   // Only the browser bridge is overridden here; no test event or write reaches Orca.
+  // A targeted historical Run may have no live dispatch to put into a wait state.
+  if (!process.env.OFFICE_PLUGIN_RUN) {
   for(const [mode,action] of [['wait','think'],['done','idle'],['inactive','idle']]){
     await page.evaluate(value=>window.__mode=value,mode)
     await page.waitForFunction(mode=>window.__appliedMode===mode,mode,{timeout:15000})
@@ -195,10 +197,12 @@ try {
   await page.locator('#refresh').click()
   await page.waitForFunction(()=>!window.TraceRedesign.getState().error,null,{timeout:15000})
   assert.ok((await pose()).actors.some(a=>a.visible))
+  evidence.steps.push('synthetic failure stops work','recovery')
+  }
   assert.deepEqual(errors,[])
   evidence.requests=await page.evaluate(()=>window.__requests)
   assert.ok(evidence.requests.every(r=>['trace.runs','trace.live','trace.load'].includes(r.name)))
-  evidence.steps.push('live load',moving.length?'actual work/think pose and frame changes':'inactive stays idle with rendering','shared Run waterfall','narrow layout','Run switch','failure stops work','recovery')
+  evidence.steps.push('live load',moving.length?'actual work/think pose and frame changes':'inactive stays idle with rendering','shared Run waterfall','narrow layout','Run switch')
   evidence.errors=errors
   await writeFile(path.join(output,'browser-results.json'),JSON.stringify(evidence,null,2))
   console.log(JSON.stringify({live,steps:evidence.steps,errors}))
