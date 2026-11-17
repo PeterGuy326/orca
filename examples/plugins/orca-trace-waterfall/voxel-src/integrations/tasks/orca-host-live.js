@@ -1,9 +1,11 @@
+import { loadTrace } from './trace-read.js'
 // Host calls cannot be aborted; generations fence replies after hide/toggle/run changes.
 export function createHostLive({
   request,
   selectedRun,
   followActive,
   selectRun,
+  onRuns = () => {},
   onData,
   onError,
   interval = 4000
@@ -44,6 +46,7 @@ export function createHostLive({
         if (!live || !Array.isArray(live.runs)) {
           throw new Error('trace.live 未返回有效列表')
         }
+        onRuns(live.runs)
         const current = selectedRun() || lastRun
         const pick = followActive()
           ? live.runs.find((run) => run.id === current)?.id || live.runs[0]?.id || current
@@ -52,7 +55,7 @@ export function createHostLive({
           onData(null, { active: 0 }, live)
           return
         }
-        const data = await request('trace.load', { runId: pick })
+        const data = await loadTrace(request, pick, valid)
         if (!valid()) {
           return
         }

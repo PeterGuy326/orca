@@ -17,6 +17,15 @@ const TEST_FILE_NAME = /\.(?:test|spec|e2e|bench)\.[cm]?[jt]sx?$/
 // Mirror literals must appear in runner sources; list manual rows each run so their lack of CI remains visible.
 const NON_UNIT_TEST_RUNNERS = [
   {
+    name: 'office plugin node:test',
+    include: ['examples/plugins/orca-trace-waterfall/tests/*.test.mjs'],
+    sources: ['.github/workflows/office-plugin-tests.yml'],
+    mirrors: [
+      'node --test tests/*.test.mjs',
+      'working-directory: examples/plugins/orca-trace-waterfall'
+    ]
+  },
+  {
     name: 'Playwright e2e',
     include: ['tests/e2e/**/*.spec.ts'],
     sources: ['tests/playwright.config.ts'],

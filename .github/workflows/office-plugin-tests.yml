@@ -1,0 +1,22 @@
+name: Office plugin tests
+on:
+  pull_request:
+    paths:
+      - 'examples/plugins/orca-trace-waterfall/**'
+      - '.github/workflows/office-plugin-tests.yml'
+permissions:
+  contents: read
+jobs:
+  plugin-tests:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: node --test tests/*.test.mjs
+        working-directory: examples/plugins/orca-trace-waterfall

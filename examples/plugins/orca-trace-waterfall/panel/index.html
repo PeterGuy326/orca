@@ -3,7 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <title>Trace Waterfall</title>
-    <link rel="stylesheet" href="../dist/office-voxel.css" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="icon" href="data:," />
+
     <style>
       :root {
         --bg: var(--orca-background, #282c34);
@@ -913,18 +915,167 @@
       #oRoster::-webkit-scrollbar-thumb:hover {
         background: var(--muted);
       }
+      [hidden] {
+        display: none !important;
+      }
+      body > header {
+        flex-wrap: nowrap;
+      }
+      body > header .seg {
+        order: 0;
+      }
+      #run {
+        order: 1;
+        flex: 1;
+        min-width: 0;
+        max-width: none;
+      }
+      #current-title {
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      body > header .toggles {
+        display: none !important;
+      }
+      #wrap {
+        display: none;
+        min-height: 200px;
+      }
+      #legend {
+        display: none;
+      }
+      #detail {
+        display: none;
+      }
+      #foot {
+        flex: none;
+      }
+      #redesign .workspace {
+        display: block;
+        padding: 0;
+      }
+      #redesign .office-stage {
+        height: calc(100vh - 80px);
+        min-height: 300px;
+        position: relative;
+      }
+      #redesign #office-viewport {
+        width: 100%;
+        height: 100%;
+      }
+      #redesign #drawer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        padding: 12px;
+        max-height: 65vh;
+        overflow: auto;
+      }
+      #redesign #drawer pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font: inherit;
+      }
+      #redesign #drawer h2 {
+        font: inherit;
+        font-weight: 600;
+      }
+      #redesign #notice {
+        padding: 8px 12px;
+        color: var(--red);
+      }
+      #redesign .office-status {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 8px;
+        background: var(--bg2);
+        border-top: 1px solid var(--border);
+      }
+      #redesign .office-page {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      #redesign #office-source {
+        margin: 0;
+      }
+      #redesign .office-status details[open] {
+        width: 100%;
+      }
+      #redesign #office-locator:empty {
+        display: none;
+      }
+      #redesign .person-row {
+        width: 100%;
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      #redesign .office-cameras {
+        display: flex;
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        gap: 4px;
+      }
+      #redesign .office-roster {
+        display: grid;
+        gap: 4px;
+        padding: 8px;
+      }
+      #redesign .task-toolbar {
+        display: none !important;
+      }
+      #redesign {
+        --paper: var(--bg2);
+        --wash: var(--bg);
+        --line: var(--border);
+        --ink: var(--fg);
+      }
+      #redesign #office-viewport canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+      #redesign .muted {
+        color: var(--muted);
+      }
+      @media (max-width: 500px) {
+        #labels {
+          width: 100px;
+        }
+        header {
+          gap: 6px;
+          padding: 8px;
+        }
+        #redesign .office-page {
+          font-size: 10px;
+        }
+      }
     </style>
   </head>
   <body>
     <header>
-      <h1 id="title">Trace Waterfall</h1>
-      <select id="run" title="Orchestration run"></select>
-      <button id="refresh" title="重新读取 orchestration.db">刷新</button>
+      <h1 id="title" hidden>Trace Waterfall</h1>
+      <span id="current-title">当前协作</span><button id="back">返回</button
+      ><button id="history">历史</button>
+      <select id="run" hidden></select>
+      <button id="refresh" hidden>重试读取</button>
       <div class="seg">
-        <button id="vTime" class="on">时间轴</button><button id="vTeam">团队</button
-        ><button id="vOffice">办公室</button>
+        <button id="vOffice" class="on">办公室</button><button id="vTime">瀑布图</button
+        ><button id="vTeam" hidden>团队</button>
       </div>
-      <div class="stats" id="stats"></div>
+      <div class="stats" id="stats" hidden></div>
       <div class="toggles">
         <label><input type="checkbox" id="tgSupp" checked /> 补充/改要求</label>
         <label><input type="checkbox" id="tgInstr" /> 全部指令</label>
@@ -933,7 +1084,7 @@
       </div>
     </header>
     <div id="legend">
-      <span class="it"><span class="sw" style="background: var(--blue)"></span>实心=在干活</span>
+      <span class="it"><span class="sw" style="background: var(--blue)"></span>实心=派发区间</span>
       <span class="it"><span class="sw hatch"></span>斜纹=阻塞等回复(推断)</span>
       <span class="it">重叠=并发 <b id="maxc" style="color: var(--bright)"></b></span>
       <span class="it"><span style="color: var(--cyan)">↓</span>派发</span>
@@ -981,144 +1132,39 @@
       </div>
     </div>
     <div id="officewrap" hidden></div>
-    <div id="redesign" style="display: none; flex: 1; min-height: 0; overflow: auto">
-      <header class="app-header">
-        <div class="brand-row">
-          <b>Orca 协作</b><span class="prototype-badge">只读记录 · 处理为模拟</span
-          ><button class="text-button" id="help">使用说明</button>
-        </div>
-        <div class="goal-row">
-          <div>
-            <p class="eyebrow">本次协作目标</p>
-            <h1 id="goal">正在读取真实快照…</h1>
-            <p id="source-caption" class="source-caption"></p>
-          </div>
-          <div class="header-actions">
-            <button id="choose-run">选择协作记录</button
-            ><button id="snapshot-refresh">重新读取快照</button>
-          </div>
-        </div>
-        <nav class="view-tabs" aria-label="工作视图">
-          <button data-view="overview" aria-selected="true">任务总览</button
-          ><button data-view="office" aria-selected="false">办公室</button
-          ><button data-view="recap" aria-selected="false">执行复盘</button>
-        </nav>
-      </header>
-      <div id="notice" class="notice" role="status" hidden></div>
+    <div id="redesign" style="flex: 1; min-height: 0; overflow: auto">
+      <div id="notice" role="status" hidden></div>
       <main class="workspace">
-        <div class="view-content">
-          <section id="view-overview" aria-label="任务总览">
-            <div class="section-intro">
-              <h2>先看需要关注的事</h2>
-              <p>按任务查看推进情况、阻塞记录与回报。编排结束不代表业务已经验收。</p>
-            </div>
-            <div id="metrics" class="metrics"></div>
-            <div class="filters">
-              <label class="search"
-                ><span>搜索</span
-                ><input id="search" type="search" placeholder="任务目标、工作线或执行会话" /></label
-              ><label
-                >状态<select id="status">
-                  <option value="all">待关注与推进中</option>
-                  <option value="attention">需查看</option>
-                  <option value="reported">已回报待确认</option>
-                  <option value="running">执行中</option>
-                  <option value="starting">待启动</option>
-                  <option value="ended">已结束</option>
-                </select></label
-              ><label
-                >排序<select id="sort">
-                  <option value="priority">关注优先</option>
-                  <option value="recent">最近更新</option>
-                </select></label
-              >
-            </div>
-            <div id="task-list"></div>
-            <button id="completed-toggle" class="completed-toggle"></button>
-          </section>
-          <section id="view-office" aria-label="办公室定位" hidden>
-            <div class="section-intro">
-              <h2>找到正在协作的会话</h2>
-              <p>从任务定位到工位，点人物看其当前任务。外观是场景角色，会话身份来自真实记录。</p>
-            </div>
-            <div class="office-card">
-              <div id="office-stage" class="office-stage">
-                <div
-                  id="office-viewport"
-                  tabindex="0"
-                  aria-label="套间：拖拽旋转、滚轮缩放、点击人物看任务"
-                ></div>
-                <div class="office-cameras">
-                  <button data-office-camera="room">全景</button
-                  ><button data-office-camera="person">人物近景</button
-                  ><button data-office-camera="top">俯视</button
-                  ><button id="office-computer">电脑内容</button>
-                </div>
+        <section id="view-office" aria-label="动态办公室">
+          <div class="office-card">
+            <div id="office-stage" class="office-stage">
+              <div
+                id="office-viewport"
+                tabindex="0"
+                aria-label="动态办公室：拖拽旋转、滚轮缩放、点人物看任务"
+              ></div>
+              <div class="office-cameras">
+                <button data-office-camera="room">全景</button
+                ><button data-office-camera="person">近景</button
+                ><button data-office-camera="top">俯视</button>
               </div>
+            </div>
+            <div class="office-status">
+              <span id="office-source"></span>
               <div class="office-page">
                 <button id="office-prev">上一页</button><span id="office-page"></span
                 ><button id="office-next">下一页</button>
               </div>
-              <p id="office-source" class="muted"></p>
-              <p id="office-locator" role="status"></p>
+              <details>
+                <summary>会话名单</summary>
+                <div id="office-roster" class="office-roster"></div>
+              </details>
             </div>
-            <div id="office-roster" class="office-roster"></div>
-          </section>
-          <section id="view-recap" aria-label="执行复盘" hidden>
-            <div class="section-intro">
-              <h2>看清派发、等待与交接</h2>
-              <p>横条是派发区间，不代表一直工作；斜纹等待段来自提问与回复关系推断。</p>
-            </div>
-            <div class="recap-tools">
-              <label>起始时间<input id="from-time" type="datetime-local" /></label
-              ><label>结束时间<input id="to-time" type="datetime-local" /></label
-              ><button id="apply-window">应用时间窗</button><button id="zoom-in">放大</button
-              ><button id="zoom-out">缩小</button><button id="reset-window">重置</button
-              ><label class="checkbox"
-                ><input id="show-lines" type="checkbox" />仅显示选中任务的关联连线</label
-              >
-            </div>
-            <p id="recap-window" class="muted"></p>
-            <div id="recap-board" class="recap-board"></div>
-            <div id="recap-events" class="recap-events"></div>
-          </section>
-        </div>
-        <aside id="drawer" class="drawer" aria-label="任务详情" hidden></aside>
+            <p id="office-locator" role="status"></p>
+          </div>
+        </section>
+        <aside id="drawer" hidden aria-label="任务对话详情"></aside>
       </main>
-      <footer>
-        真实数据快照；「处理这件事」仅演示填写到本地示意回执，不实际发送，不改变任务状态。
-      </footer>
-      <dialog id="run-dialog">
-        <div class="dialog-head">
-          <h2>选择协作记录</h2>
-          <button data-close-dialog aria-label="关闭记录选择">关闭</button>
-        </div>
-        <p>完整目标和快照时点在这里查看，选择后清除上一条记录的定位。</p>
-        <div id="run-options"></div>
-      </dialog>
-      <dialog id="help-dialog">
-        <div class="dialog-head">
-          <h2>这三个视图怎么用</h2>
-          <button data-close-dialog aria-label="关闭使用说明">关闭</button>
-        </div>
-        <p>
-          <b>任务总览：</b>先看需查看的失败/阻塞记录，再看已回报与执行中的任务；已结束项默认折叠。
-        </p>
-        <p>
-          <b>办公室：</b
-          >用来定位执行会话；任务和人物共享详情。每页九席，活跃会话首批优先入席，翻页不改变身份。
-        </p>
-        <p>
-          <b>执行复盘：</b>默认最近十二小时、不铺全网连线；选择任务后可聚焦其派发区间和相关消息。
-        </p>
-        <p>
-          <b>真实数据快照：</b
-          >时间代表读取时点。点“重新读取快照”才会经原插件再次只读取数，页面不自动跟踪，不把回报当业务验收。
-        </p>
-        <p>
-          仅可显式点击打开原会话；完整输入和技术标识收在详情折叠项。源码、构建脚本与许可证随本地目录保留。
-        </p>
-      </dialog>
     </div>
     <div id="detail">
       <span style="color: var(--muted)"
@@ -1129,7 +1175,6 @@
     <footer id="foot">
       只读 orchestration.db。等待段与「补充/停止」分类为推断（Orca 未显式记录同步/异步）。
     </footer>
-    <script src="../dist/office.js"></script>
     <script defer src="../dist/redesign.js"></script>
     <link rel="stylesheet" href="../dist/redesign.css" />
     <script>
@@ -1193,7 +1238,7 @@
         FULL = [0, 1],
         W = 800,
         NL = 1
-      let view = 'timeline',
+      let view = 'office',
         curT = 0,
         playing = false,
         playTimer = 0,
@@ -1345,7 +1390,7 @@
           id: dp.id,
           lane: laneOfTerm[dp.session?.terminalId || dp.terminalId],
           start: dp.start,
-          end: dp.end || dp.start,
+          end: dp.end ?? Date.now(),
           status: dp.status,
           failed: dp.failed,
           label: dp.label,
@@ -1370,7 +1415,7 @@
                 if (!reply || m.at < reply.at) reply = m
               }
             }
-            const end = reply ? reply.at : dp.end || q.at
+            const end = reply ? reply.at : (dp.end ?? Date.now())
             if (end > q.at)
               rawWaits.push({
                 dispatch: dp.id,
@@ -1477,7 +1522,13 @@
         nodes.forEach((n) => (details[n.id] = n))
         msgMap = {}
         messages.forEach((m) => (msgMap[m.id] = m))
-        FULL = [runNode.start, runNode.end]
+        const points = nodes
+          .flatMap((node) => [node.start, node.end])
+          .concat(messages.map((message) => message.at))
+          .filter(Number.isFinite)
+        const start = Math.min(...points)
+        const end = Math.max(...points, ...bars.map((bar) => bar.end))
+        FULL = [start, Math.max(start + 1000, end)]
         t0 = FULL[0]
         t1 = FULL[1]
         // team view model: dispatches per lane + groups by root task line
@@ -1517,7 +1568,7 @@
         for (const L of lanes) {
           const div = document.createElement('div')
           div.className = 'lane-label' + (L.idx === 0 ? ' coord' : '')
-          const chars = [...L.name]
+          const chars = [...(L.name || '未命名')]
           const disp = chars.length > 12 ? chars.slice(0, 11).join('') + '…' : L.name
           div.title =
             (L.full || L.name) + (L.worktree ? '\n工作区 ' + L.worktree : '') + '\n' + L.terminal
@@ -1722,13 +1773,14 @@
         document.getElementById('vTeam').classList.toggle('on', v === 'team')
         document.getElementById('vOffice').classList.toggle('on', v === 'office')
         document.getElementById('wrap').style.display = v === 'timeline' ? 'flex' : 'none'
+        document.getElementById('foot').style.display = v === 'office' ? 'none' : 'block'
         document.getElementById('legend').style.display = v === 'timeline' ? 'flex' : 'none'
         document.querySelector('.toggles').style.display = v === 'timeline' ? 'flex' : 'none'
         document.getElementById('teamwrap').style.display = v === 'team' ? 'flex' : 'none'
         document.getElementById('officewrap').style.display = 'none'
         document.getElementById('redesign').style.display = v === 'office' ? 'block' : 'none'
         window.TraceRedesign?.show(v === 'office')
-        detail.style.display = v === 'office' ? 'none' : 'block'
+        detail.style.display = 'none'
         if (window.OfficeView) OfficeView.show(false)
         if (window.OfficeLive) OfficeLive.show(v === 'office')
         detail.innerHTML =
@@ -1988,9 +2040,9 @@
               g
             )
             tx.textContent =
-              b.shortTitle.length > Math.floor(bw / 10)
+              (b.shortTitle || '').length > Math.floor(bw / 10)
                 ? b.shortTitle.slice(0, Math.floor(bw / 10) - 1) + '…'
-                : b.shortTitle
+                : b.shortTitle || b.label || ''
             tx.style.pointerEvents = 'none'
           }
           bindBar(g, b)
@@ -2109,6 +2161,7 @@
       }
 
       function showBar(b) {
+        detail.style.display = 'block'
         const d = details[b.id] || {}
         const sess = d.session
         let html =
@@ -2163,6 +2216,7 @@
           }
       }
       function showWait(w) {
+        detail.style.display = 'block'
         const m = msgMap[w.msgId] || {}
         detail.innerHTML =
           '<h3>阻塞等待段（推断） <span class="badge">' +
@@ -2180,6 +2234,7 @@
           '</span></div><div class="row"><span class="k">说明</span><span class="v">Orca 未显式记录同步/异步；此段按「发出提问/求助 → 收到下一条回复或指令」推断。</span></div>'
       }
       function showConn(c) {
+        detail.style.display = 'block'
         const m = c.msgId ? msgMap[c.msgId] : null
         const from = lanes[c.from]?.name || '?',
           to = lanes[c.to]?.name || '?'
@@ -2308,177 +2363,50 @@
         else render()
       })
 
-      function showError(e, ctx) {
-        detail.innerHTML =
-          '<span style="color:var(--red)">' +
-          esc(ctx || '') +
-          ' ' +
-          esc(e?.message || e) +
-          '</span>'
-      }
-      let loadGeneration = 0
-      function applyRunAnswer(answer, summary) {
+      function applyRunAnswer(answer) {
+        const previous =
+          D?.run.id === answer.run.id && (t0 !== FULL[0] || t1 !== FULL[1]) ? [t0, t1] : null
+        if (D?.run.id !== answer.run.id) {
+          clearRun()
+        }
         processData(answer)
+        if (previous) {
+          const span = Math.min(previous[1] - previous[0], FULL[1] - FULL[0])
+          t0 = Math.max(FULL[0], Math.min(previous[0], FULL[1] - span))
+          t1 = t0 + span
+        }
         buildLabels()
-        window.TraceRedesign?.setData(answer, summary)
-        if (window.OfficeView) {
-          if (summary) OfficeView.live(answer, summary)
-          else OfficeView.mount(answer)
+        if (view === 'timeline') {
+          render()
         }
-        if (view === 'team') renderTeam()
-        else if (view === 'timeline') render()
-        document.getElementById('title').textContent = 'Orca Trace · ' + answer.run.shortTitle
-        const nDone = conn.filter((c) => c.kind === 'worker_done').length,
-          nHand = conn.filter((c) => c.kind === 'handoff').length,
-          nEsc = conn.filter((c) => c.kind === 'escalation').length
-        document.getElementById('stats').innerHTML =
-          '<b>' +
-          fmtDur(FULL[1] - FULL[0]) +
-          '</b> · ' +
-          (lanes.length - 1) +
-          ' worker · ' +
-          bars.length +
-          ' 派发 · ' +
-          nDone +
-          ' 回报 · ' +
-          nHand +
-          ' 交接 · ' +
-          nEsc +
-          ' 求助 · 峰值并发 <b>∥' +
-          maxC +
-          '</b>'
-        document.getElementById('maxc').textContent = '∥' + maxC
+        document.getElementById('maxc').textContent = `∥${maxC}`
         document.getElementById('foot').textContent =
-          '只读 ' +
-          answer.db +
-          ' · run ' +
-          answer.run.id +
-          ' · ' +
-          answer.nodes.length +
-          ' 节点 / ' +
-          answer.messages.length +
-          ' 消息。等待段与「补充/停止」分类为推断。'
+          `实时读取 · ${answer.run.id} · ${new Date().toLocaleTimeString('zh-CN', { hour12: false })}`
       }
-      async function loadRun(id) {
-        const generation = ++loadGeneration
-        if (!id) return
-        try {
-          const answer = await orca.plugin.request('trace.load', { runId: id })
-          if (generation !== loadGeneration || runSelect.value !== id) return
-          if (!answer || typeof answer !== 'object' || answer.run?.id !== id)
-            throw new Error('trace.load 未返回有效数据')
-          for (const key of ['nodes', 'messages', 'calls'])
-            if (answer[key] != null && !Array.isArray(answer[key]))
-              throw new Error('trace.load 的 ' + key + ' 不是数组')
-          applyRunAnswer(answer)
-        } catch (e) {
-          if (generation === loadGeneration) {
-            showError(e, '加载 run 失败：')
-            if (window.OfficeView) OfficeView.fail('加载 Run 失败 / unknown')
-            window.TraceRedesign?.fail()
-          }
-        }
+      function clearRun() {
+        stopPlay()
+        drag = null
+        D = null
+        details = {}
+        msgMap = {}
+        detail.style.display = 'none'
+        detail.replaceChildren()
+        svg.replaceChildren()
+        labelsEl.replaceChildren()
+        document.getElementById('maxc').textContent = ''
       }
-      async function init() {
-        try {
-          const { runs } = await orca.plugin.request('trace.runs')
-          const previous = runSelect.value
-          runSelect.innerHTML = runs
-            .map(
-              (r) =>
-                '<option value="' +
-                esc(r.id) +
-                '">' +
-                esc((r.objective || r.id).slice(0, 48)) +
-                '</option>'
-            )
-            .join('')
-          const richest = runs.reduce((b, r) => (r.nodes > b.nodes ? r : b), runs[0])
-          const pick = runs.find((r) => r.id === previous) || richest
-          if (!pick) return
-          runSelect.value = pick.id
-          if (window.OfficeLive) OfficeLive.changed()
-          await loadRun(pick.id)
-        } catch (e) {
-          showError(e, '读取 runs 失败：')
-          window.TraceRedesign?.fail()
-        }
+      window.TraceTimeline = {
+        apply: applyRunAnswer,
+        show: setView,
+        clear: clearRun,
+        getState: () => ({
+          runId: D?.run.id,
+          range: [t0, t1],
+          full: [...FULL],
+          nodes: D?.nodes.length ?? 0
+        })
       }
-      runSelect.onchange = () => {
-        loadGeneration++
-        if (window.OfficeLive) OfficeLive.changed()
-        loadRun(runSelect.value)
-      }
-      document.getElementById('refresh').onclick = init
-
-      /* ---- live mode: poll orchestration.db for runs that are running right now ---- */
-      let liveOn = false
-      function liveTag(t, col) {
-        const el = document.getElementById('oLiveTag')
-        el.textContent = t
-        el.style.color = col || 'var(--muted)'
-      }
-      window.OfficeLive = OfficeView.createLiveController({
-        request: (name, data) => orca.plugin.request(name, data),
-        selectedRun: () => runSelect.value,
-        followActive: () => document.getElementById('oFollow').checked,
-        selectRun(id, title) {
-          if (!Array.from(runSelect.options).some((option) => option.value === id)) {
-            const option = document.createElement('option')
-            option.value = id
-            option.textContent = (title || id).slice(0, 48)
-            runSelect.append(option)
-          }
-          if (runSelect.value !== id) {
-            loadGeneration++
-            runSelect.value = id
-          }
-        },
-        onData(answer, summary) {
-          if (answer) applyRunAnswer(answer, summary)
-          else OfficeView.live(null, summary)
-          liveTag(
-            '实时 · active ' +
-              summary.active +
-              ' · ' +
-              new Date().toLocaleTimeString('zh-CN', { hour12: false }),
-            'var(--green)'
-          )
-        },
-        onError(e) {
-          OfficeView.fail('宿主实时读取失败 / unknown')
-          window.TraceRedesign?.fail()
-          liveTag('读取失败 / unknown：' + ((e && e.message) || e), 'var(--red)')
-        }
-      })
-      document.getElementById('oFollow').onchange = () => {
-        if (liveOn) OfficeView.fail('等待所选模式刷新')
-        OfficeLive.changed()
-      }
-      document.getElementById('oLive').onclick = () => {
-        liveOn = !liveOn
-        const b = document.getElementById('oLive')
-        b.classList.toggle('on', liveOn)
-        b.style.background = liveOn ? 'var(--green)' : ''
-        b.style.color = liveOn ? '#282c34' : ''
-        b.style.fontWeight = liveOn ? '600' : ''
-        if (window.OfficeView) OfficeView.setLive(liveOn)
-        loadGeneration++
-        OfficeLive.setEnabled(liveOn)
-        if (liveOn) liveTag('正在读取当前 Run…')
-        else {
-          liveTag('真实历史回放')
-          loadRun(runSelect.value)
-        }
-      }
-      window.traceRedesignAccept = applyRunAnswer
-      window.traceRedesignSelect = async (id) => {
-        runSelect.value = id
-        await loadRun(id)
-      }
-      window.traceRedesignCurrent = () =>
-        D ? { data: D, capturedAt: new Date().toISOString() } : null
-      init()
+      setView('office')
     </script>
   </body>
 </html>

@@ -1,4 +1,5 @@
 import http from 'node:http'
+import { loadTrace } from '../voxel-src/integrations/tasks/trace-read.js'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import path from 'node:path'
@@ -130,7 +131,7 @@ http
           return json(400, { error: 'invalid_run_id' })
         }
         const live = await request('trace.live'),
-          data = await request('trace.load', { runId })
+          data = await loadTrace(request, runId)
         if (data?.run?.id !== runId) {
           throw new Error('Run mismatch')
         }

@@ -410,11 +410,28 @@ export function createScene({
       renderer.setSize(width, height)
       renderer.domElement.style.imageRendering = pixelated ? 'pixelated' : 'auto'
     }
-    const resizeObserver = new ResizeObserver(resize)
+    let resizeFrame = null
+    const resizeObserver = new ResizeObserver(() => {
+      cancelAnimationFrame(resizeFrame)
+      resizeFrame = requestAnimationFrame(resize)
+    })
+    lifetime.add(() => cancelAnimationFrame(resizeFrame))
     lifetime.add(() => resizeObserver.disconnect())
     resizeObserver.observe(viewport)
     resize()
     const raycaster = new THREE.Raycaster()
+    const nameTags = managedActors
+      ? actors.map((actor, index) => {
+          const button = document.createElement('button')
+          button.dataset.officeActor = String(index)
+          button.style.cssText =
+            'position:absolute;transform:translate(-50%,-100%);font-size:10px;z-index:2'
+          listen(button, 'click', () => select(index))
+          viewport.append(button)
+          lifetime.add(() => button.remove())
+          return button
+        })
+      : []
     let pointerStart = null
     listen(renderer.domElement, 'pointerdown', (e) => {
       pointerStart = { x: e.clientX, y: e.clientY }
@@ -503,6 +520,27 @@ export function createScene({
     controls.addEventListener('start', () => {
       cameraTween = null
     })
+    renderer.domElement.addEventListener(
+      'wheel',
+      (event) => {
+        const width = renderer.domElement.clientWidth
+        if (!controls.enabled || !width || Math.abs(event.deltaX) <= Math.abs(event.deltaY)) {
+          return
+        }
+        event.preventDefault()
+        event.stopImmediatePropagation()
+        cameraTween = null
+        const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? width : 1
+        const offset = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0)
+        offset.multiplyScalar(
+          (event.deltaX * unit * (camera.right - camera.left)) / camera.zoom / width
+        )
+        camera.position.add(offset)
+        controls.target.add(offset)
+        controls.update()
+      },
+      { capture: true, passive: false, signal: aborter.signal }
+    )
     listen(renderer.domElement, 'webglcontextlost', (e) => {
       e.preventDefault()
       setPaused(true)
@@ -623,6 +661,11 @@ export function createScene({
         pixelated,
         flexibility: flex,
         camera: cameraMode,
+        cameraPose: {
+          position: camera.position.toArray(),
+          target: controls.target.toArray(),
+          zoom: camera.zoom
+        },
         lighting: currentLighting,
         actors: actors.map((a) => ({
           instanceId: a.config.instanceId,
@@ -731,6 +774,16 @@ export function createScene({
         }
       }
       controls.update()
+      nameTags.forEach((button, index) => {
+        const actor = actors[index],
+          p = actor.root.position.clone()
+        p.y = 2.2
+        p.project(camera)
+        button.hidden = !actor.root.visible || Math.abs(p.x) > 1 || Math.abs(p.y) > 1
+        button.textContent = actor.config.name
+        button.style.left = `${((p.x + 1) / 2) * width}px`
+        button.style.top = `${((-p.y + 1) / 2) * height}px`
+      })
       if (bubbleText) {
         if (elapsed > bubbleUntil) {
           hideBubble()
