@@ -1,12 +1,10 @@
-# Trace Waterfall and Office Voxel
+# Live Office Voxel and Trace Waterfall
 
-The Trace panel starts on the existing timeline and keeps the team view. The Office tab adds task overview, a nine-seat paginated voxel office, task details and execution recap. Open-session buttons use the existing `trace.session.open` handler and require an explicit click.
+The panel opens in Office Voxel. Office and the Network-style waterfall share one selected orchestration Run, read through the existing host trace.live and trace.load handlers. Polling waits for each request chain to finish before scheduling the next read.
 
-Task handling offers four choices, then a required opinion, confirmation and a local simulated receipt. Drafts and receipts live in page memory and disappear on reload. **No message is sent.** The plugin API has terminal text input, but no orchestration message API with a verified recipient/thread and delivery receipt; real sending remains future work.
+Click a person or expand the session list to open task input, reports and exact associated messages. In the waterfall, click bars, arrows or waits for their records. A live dispatch uses the original Office Voxel work action, an inferred wait uses think, and finished or unreadable states use idle. Failed reads preserve prior records and stop working animations. There are no simulated processing or receipt controls.
 
-## Build and verify
-
-This example is independent of the repository's pnpm workspace. From this directory:
+From this folder:
 
 ```sh
 npm ci
@@ -18,17 +16,6 @@ orca plugin test . --json
 ORCA_BACKGROUND_LAUNCH=1 OFFICE_PLUGIN_EVIDENCE=/absolute/external/evidence node tests/browser-regression.mjs
 ```
 
-Browser checks use headless Chrome. Set `CHROME_PATH` for your platform. The read-only worker runs on the Orca host, locates that host's orchestration database, and requires `sqlite3` and `orca` on PATH (or `ORCA_CLI_COMMAND`). Missing sources remain errors, never successful/empty completion.
+The browser regression uses synthetic inputs unless OFFICE_PLUGIN_LIVE=1. In live mode its loopback bridge calls the actual loaded development plugin with the Orca CLI and permits only read handlers. Failure and status transition checks are explicitly synthetic.
 
-`voxel-src/` contains the scene and original panel source; `redesign/src/` contains the task views. `build.mjs` produces both panel bundles and the standalone preview. Scene artwork and font licenses are retained under `panel/` and `redesign/`.
-
-## Standalone preview and private fixtures
-
-```sh
-node redesign/server.mjs
-# Optional: ORCA_TRACE_FIXTURE=/absolute/private/snapshots.json PROTOTYPE_PORT=5241 node redesign/server.mjs
-```
-
-The default fixture is synthetic. Private files must stay outside this repository. The preview listens only on loopback, checks same-origin GET requests, restricts live reads to fixture run IDs and redacts credentials. It never sends messages. The preview's explicit refresh reads the currently loaded development plugin; it requires that plugin to be available.
-
-Real snapshots, evidence screenshots, transcripts, local database exports and credentials are excluded from this example. Generated panel bundles contain code and licensed artwork only. Do not place private data under source or fixtures.
+Build output contains one scene bundle and licensed assets. The former standalone prototype server is historical; build and validate the plugin panel. Private snapshots, transcripts, database exports and screenshots must remain outside this repository. No capabilities or data-writing handlers are added.

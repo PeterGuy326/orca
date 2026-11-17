@@ -23,7 +23,7 @@ export function createOfficeView({ root, onTask }) {
   const current = () => entities().filter((entity) => Math.floor(slots.get(entity.id) / 9) === page)
   const feed = {
     kind: 'orca',
-    label: '真实快照 · 只读',
+    label: 'Orca 实时协作',
     getSnapshot: source.getSnapshot,
     getBindings: () => current().map(binding),
     subscribe(listener) {
@@ -113,7 +113,7 @@ export function createOfficeView({ root, onTask }) {
     root.querySelector('#office-prev').disabled = page === 0
     root.querySelector('#office-next').disabled = page >= pages - 1
     root.querySelector('#office-source').textContent = model
-      ? `快照时点 ${new Date(model.capturedAt).toLocaleString('zh-CN', { hour12: false })}；人物状态只代表该时点。Router 不占工位。`
+      ? `更新于 ${new Date(model.capturedAt).toLocaleTimeString('zh-CN', { hour12: false })} · ${model.bundle.liveSummary?.active || 0} 个活跃派发`
       : '暂无快照'
   }
   function focusTask(taskId) {
@@ -218,6 +218,7 @@ export function createOfficeView({ root, onTask }) {
     getState() {
       return {
         source: 'orca',
+        bindings: source.getState().bindings,
         runId,
         page,
         selected,
