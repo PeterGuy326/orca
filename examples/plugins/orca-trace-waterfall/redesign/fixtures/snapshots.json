@@ -1,0 +1,692 @@
+{
+  "bundles": [
+    {
+      "capturedAt": "2023-11-14T22:15:20.000Z",
+      "liveSummary": {
+        "id": "run_example",
+        "active": 12
+      },
+      "data": {
+        "run": {
+          "id": "run_example",
+          "objective": "Example collaboration 0",
+          "shortTitle": "Example collaboration"
+        },
+        "db": "synthetic",
+        "calls": [],
+        "outcomes": [],
+        "nodes": [
+          {
+            "id": "run_example",
+            "kind": "run",
+            "parentId": null,
+            "start": 1700000000000,
+            "status": "run",
+            "session": {
+              "terminalId": "term_router",
+              "status": "active",
+              "name": "Coordinator"
+            }
+          },
+          {
+            "id": "task_0",
+            "kind": "task",
+            "parentId": "run_example",
+            "label": "Example task 0",
+            "shortTitle": "Example task 0",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_0",
+            "kind": "dispatch",
+            "parentId": "task_0",
+            "taskId": "task_0",
+            "terminalId": "term_0",
+            "label": "Example task 0",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_0",
+              "status": "active",
+              "name": "Worker 0"
+            }
+          },
+          {
+            "id": "task_1",
+            "kind": "task",
+            "parentId": "run_example",
+            "label": "Example task 1",
+            "shortTitle": "Example task 1",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_1",
+            "kind": "dispatch",
+            "parentId": "task_1",
+            "taskId": "task_1",
+            "terminalId": "term_1",
+            "label": "Example task 1",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_1",
+              "status": "active",
+              "name": "Worker 1"
+            }
+          },
+          {
+            "id": "task_2",
+            "kind": "task",
+            "parentId": "run_example",
+            "label": "Example task 2",
+            "shortTitle": "Example task 2",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_2",
+            "kind": "dispatch",
+            "parentId": "task_2",
+            "taskId": "task_2",
+            "terminalId": "term_2",
+            "label": "Example task 2",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_2",
+              "status": "active",
+              "name": "Worker 2"
+            }
+          },
+          {
+            "id": "task_3",
+            "kind": "task",
+            "parentId": "run_example",
+            "label": "Example task 3",
+            "shortTitle": "Example task 3",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_3",
+            "kind": "dispatch",
+            "parentId": "task_3",
+            "taskId": "task_3",
+            "terminalId": "term_3",
+            "label": "Example task 3",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_3",
+              "status": "active",
+              "name": "Worker 3"
+            }
+          },
+          {
+            "id": "task_4",
+            "kind": "task",
+            "parentId": "run_example",
+            "label": "Example task 4",
+            "shortTitle": "Example task 4",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_4",
+            "kind": "dispatch",
+            "parentId": "task_4",
+            "taskId": "task_4",
+            "terminalId": "term_4",
+            "label": "Example task 4",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_4",
+              "status": "active",
+              "name": "Worker 4"
+            }
+          },
+          {
+            "id": "task_5",
+            "kind": "task",
+            "parentId": "run_example",
+            "label": "Example task 5",
+            "shortTitle": "Example task 5",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_5",
+            "kind": "dispatch",
+            "parentId": "task_5",
+            "taskId": "task_5",
+            "terminalId": "term_5",
+            "label": "Example task 5",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_5",
+              "status": "active",
+              "name": "Worker 5"
+            }
+          },
+          {
+            "id": "task_6",
+            "kind": "task",
+            "parentId": "run_example",
+            "label": "Example task 6",
+            "shortTitle": "Example task 6",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_6",
+            "kind": "dispatch",
+            "parentId": "task_6",
+            "taskId": "task_6",
+            "terminalId": "term_6",
+            "label": "Example task 6",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_6",
+              "status": "active",
+              "name": "Worker 6"
+            }
+          },
+          {
+            "id": "task_7",
+            "kind": "task",
+            "parentId": "run_example",
+            "label": "Example task 7",
+            "shortTitle": "Example task 7",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_7",
+            "kind": "dispatch",
+            "parentId": "task_7",
+            "taskId": "task_7",
+            "terminalId": "term_7",
+            "label": "Example task 7",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_7",
+              "status": "active",
+              "name": "Worker 7"
+            }
+          },
+          {
+            "id": "task_8",
+            "kind": "task",
+            "parentId": "run_example",
+            "label": "Example task 8",
+            "shortTitle": "Example task 8",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_8",
+            "kind": "dispatch",
+            "parentId": "task_8",
+            "taskId": "task_8",
+            "terminalId": "term_8",
+            "label": "Example task 8",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_8",
+              "status": "active",
+              "name": "Worker 8"
+            }
+          },
+          {
+            "id": "task_9",
+            "kind": "task",
+            "parentId": "run_example",
+            "label": "Example task 9",
+            "shortTitle": "Example task 9",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_9",
+            "kind": "dispatch",
+            "parentId": "task_9",
+            "taskId": "task_9",
+            "terminalId": "term_9",
+            "label": "Example task 9",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_9",
+              "status": "active",
+              "name": "Worker 9"
+            }
+          },
+          {
+            "id": "task_10",
+            "kind": "task",
+            "parentId": "run_example",
+            "label": "Example task 10",
+            "shortTitle": "Example task 10",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_10",
+            "kind": "dispatch",
+            "parentId": "task_10",
+            "taskId": "task_10",
+            "terminalId": "term_10",
+            "label": "Example task 10",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_10",
+              "status": "active",
+              "name": "Worker 10"
+            }
+          },
+          {
+            "id": "task_11",
+            "kind": "task",
+            "parentId": "run_example",
+            "label": "Example task 11",
+            "shortTitle": "Example task 11",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_11",
+            "kind": "dispatch",
+            "parentId": "task_11",
+            "taskId": "task_11",
+            "terminalId": "term_11",
+            "label": "Example task 11",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_11",
+              "status": "active",
+              "name": "Worker 11"
+            }
+          }
+        ],
+        "messages": []
+      }
+    },
+    {
+      "capturedAt": "2023-11-14T22:15:20.000Z",
+      "liveSummary": {
+        "id": "run_second",
+        "active": 12
+      },
+      "data": {
+        "run": {
+          "id": "run_second",
+          "objective": "Example collaboration 1",
+          "shortTitle": "Example collaboration"
+        },
+        "db": "synthetic",
+        "calls": [],
+        "outcomes": [],
+        "nodes": [
+          {
+            "id": "run_second",
+            "kind": "run",
+            "parentId": null,
+            "start": 1700000000000,
+            "status": "run",
+            "session": {
+              "terminalId": "term_router",
+              "status": "active",
+              "name": "Coordinator"
+            }
+          },
+          {
+            "id": "task_0",
+            "kind": "task",
+            "parentId": "run_second",
+            "label": "Example task 0",
+            "shortTitle": "Example task 0",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_0",
+            "kind": "dispatch",
+            "parentId": "task_0",
+            "taskId": "task_0",
+            "terminalId": "term_0",
+            "label": "Example task 0",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_0",
+              "status": "active",
+              "name": "Worker 0"
+            }
+          },
+          {
+            "id": "task_1",
+            "kind": "task",
+            "parentId": "run_second",
+            "label": "Example task 1",
+            "shortTitle": "Example task 1",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_1",
+            "kind": "dispatch",
+            "parentId": "task_1",
+            "taskId": "task_1",
+            "terminalId": "term_1",
+            "label": "Example task 1",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_1",
+              "status": "active",
+              "name": "Worker 1"
+            }
+          },
+          {
+            "id": "task_2",
+            "kind": "task",
+            "parentId": "run_second",
+            "label": "Example task 2",
+            "shortTitle": "Example task 2",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_2",
+            "kind": "dispatch",
+            "parentId": "task_2",
+            "taskId": "task_2",
+            "terminalId": "term_2",
+            "label": "Example task 2",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_2",
+              "status": "active",
+              "name": "Worker 2"
+            }
+          },
+          {
+            "id": "task_3",
+            "kind": "task",
+            "parentId": "run_second",
+            "label": "Example task 3",
+            "shortTitle": "Example task 3",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_3",
+            "kind": "dispatch",
+            "parentId": "task_3",
+            "taskId": "task_3",
+            "terminalId": "term_3",
+            "label": "Example task 3",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_3",
+              "status": "active",
+              "name": "Worker 3"
+            }
+          },
+          {
+            "id": "task_4",
+            "kind": "task",
+            "parentId": "run_second",
+            "label": "Example task 4",
+            "shortTitle": "Example task 4",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_4",
+            "kind": "dispatch",
+            "parentId": "task_4",
+            "taskId": "task_4",
+            "terminalId": "term_4",
+            "label": "Example task 4",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_4",
+              "status": "active",
+              "name": "Worker 4"
+            }
+          },
+          {
+            "id": "task_5",
+            "kind": "task",
+            "parentId": "run_second",
+            "label": "Example task 5",
+            "shortTitle": "Example task 5",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_5",
+            "kind": "dispatch",
+            "parentId": "task_5",
+            "taskId": "task_5",
+            "terminalId": "term_5",
+            "label": "Example task 5",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_5",
+              "status": "active",
+              "name": "Worker 5"
+            }
+          },
+          {
+            "id": "task_6",
+            "kind": "task",
+            "parentId": "run_second",
+            "label": "Example task 6",
+            "shortTitle": "Example task 6",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_6",
+            "kind": "dispatch",
+            "parentId": "task_6",
+            "taskId": "task_6",
+            "terminalId": "term_6",
+            "label": "Example task 6",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_6",
+              "status": "active",
+              "name": "Worker 6"
+            }
+          },
+          {
+            "id": "task_7",
+            "kind": "task",
+            "parentId": "run_second",
+            "label": "Example task 7",
+            "shortTitle": "Example task 7",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_7",
+            "kind": "dispatch",
+            "parentId": "task_7",
+            "taskId": "task_7",
+            "terminalId": "term_7",
+            "label": "Example task 7",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_7",
+              "status": "active",
+              "name": "Worker 7"
+            }
+          },
+          {
+            "id": "task_8",
+            "kind": "task",
+            "parentId": "run_second",
+            "label": "Example task 8",
+            "shortTitle": "Example task 8",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_8",
+            "kind": "dispatch",
+            "parentId": "task_8",
+            "taskId": "task_8",
+            "terminalId": "term_8",
+            "label": "Example task 8",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_8",
+              "status": "active",
+              "name": "Worker 8"
+            }
+          },
+          {
+            "id": "task_9",
+            "kind": "task",
+            "parentId": "run_second",
+            "label": "Example task 9",
+            "shortTitle": "Example task 9",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_9",
+            "kind": "dispatch",
+            "parentId": "task_9",
+            "taskId": "task_9",
+            "terminalId": "term_9",
+            "label": "Example task 9",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_9",
+              "status": "active",
+              "name": "Worker 9"
+            }
+          },
+          {
+            "id": "task_10",
+            "kind": "task",
+            "parentId": "run_second",
+            "label": "Example task 10",
+            "shortTitle": "Example task 10",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_10",
+            "kind": "dispatch",
+            "parentId": "task_10",
+            "taskId": "task_10",
+            "terminalId": "term_10",
+            "label": "Example task 10",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_10",
+              "status": "active",
+              "name": "Worker 10"
+            }
+          },
+          {
+            "id": "task_11",
+            "kind": "task",
+            "parentId": "run_second",
+            "label": "Example task 11",
+            "shortTitle": "Example task 11",
+            "status": "dispatched",
+            "start": 1700000000000
+          },
+          {
+            "id": "ctx_11",
+            "kind": "dispatch",
+            "parentId": "task_11",
+            "taskId": "task_11",
+            "terminalId": "term_11",
+            "label": "Example task 11",
+            "status": "ready",
+            "start": 1700000001000,
+            "end": null,
+            "input": "Synthetic input",
+            "session": {
+              "terminalId": "term_11",
+              "status": "active",
+              "name": "Worker 11"
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,2484 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <title>Trace Waterfall</title>
+    <link rel="stylesheet" href="../dist/office-voxel.css" />
+    <style>
+      :root {
+        --bg: var(--orca-background, #282c34);
+        --bg2: var(--orca-secondary, #21252b);
+        --bg3: #2c313a;
+        --border: var(--orca-border, #3e4451);
+        --fg: var(--orca-foreground, #abb2bf);
+        --bright: #d7dae0;
+        --muted: var(--orca-muted-foreground, #5c6370);
+        --blue: #61afef;
+        --green: #98c379;
+        --red: #e06c75;
+        --yellow: #e5c07b;
+        --purple: #c678dd;
+        --cyan: #56b6c2;
+        --orange: #d19a66;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          12px/1.5 'JetBrains Mono',
+          ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          monospace;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg2);
+      }
+      header h1 {
+        font-size: 13px;
+        margin: 0;
+        color: var(--bright);
+        font-weight: 600;
+      }
+      header .stats {
+        color: var(--muted);
+        font-size: 11px;
+      }
+      header .stats b {
+        color: var(--fg);
+      }
+      select,
+      button {
+        font: inherit;
+        font-size: 11px;
+        color: var(--fg);
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 2px 6px;
+        cursor: pointer;
+      }
+      select {
+        max-width: 280px;
+      }
+      button:hover {
+        border-color: var(--muted);
+      }
+      .toggles {
+        margin-left: auto;
+        display: flex;
+        gap: 10px;
+        font-size: 11px;
+        align-items: center;
+      }
+      .toggles label {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+        cursor: pointer;
+      }
+      #legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px 14px;
+        padding: 5px 12px;
+        border-bottom: 1px solid var(--border);
+        font-size: 11px;
+        color: var(--muted);
+        background: var(--bg2);
+      }
+      #legend .it {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .sw {
+        width: 18px;
+        height: 8px;
+        border-radius: 2px;
+        display: inline-block;
+      }
+      .sw.hatch {
+        background: repeating-linear-gradient(45deg, var(--yellow) 0 2px, transparent 2px 5px);
+        border: 1px solid var(--yellow);
+      }
+      .tri {
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        display: inline-block;
+      }
+      #wrap {
+        display: flex;
+        overflow: hidden;
+        flex: 1;
+        min-height: 0;
+      }
+      #labels {
+        width: 140px;
+        flex: none;
+        border-right: 1px solid var(--border);
+        background: var(--bg2);
+        overflow: hidden;
+      }
+      .lane-label {
+        height: 48px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 8px;
+        border-bottom: 1px solid var(--bg3);
+        overflow: hidden;
+      }
+      .lane-label img,
+      .lane-label svg {
+        width: 16px;
+        height: 16px;
+        flex: none;
+      }
+      .lane-label .nm {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--bright);
+        font-size: 11px;
+      }
+      .lane-label .sub {
+        color: var(--muted);
+        font-size: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .lane-label.coord {
+        background: var(--bg3);
+      }
+      #chart-scroll {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+        cursor: crosshair;
+      }
+      svg {
+        display: block;
+      }
+      .bar,
+      .conn,
+      .tick {
+        cursor: pointer;
+      }
+      .bar:hover,
+      .conn:hover,
+      .tick:hover {
+        filter: brightness(1.3);
+      }
+      #tip {
+        position: fixed;
+        pointer-events: none;
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 5px 8px;
+        font-size: 11px;
+        color: var(--bright);
+        max-width: 340px;
+        z-index: 9;
+        display: none;
+      }
+      #tip .t {
+        color: var(--muted);
+        font-size: 10px;
+      }
+      #detail {
+        border-top: 1px solid var(--border);
+        background: var(--bg2);
+        padding: 10px 12px;
+        min-height: 92px;
+        max-height: 38vh;
+        overflow: auto;
+      }
+      #detail h3 {
+        margin: 0 0 6px;
+        font-size: 12px;
+        color: var(--bright);
+      }
+      #detail .row {
+        display: flex;
+        gap: 8px;
+        margin: 3px 0;
+        font-size: 11px;
+      }
+      #detail .k {
+        color: var(--muted);
+        flex: none;
+        width: 52px;
+      }
+      #detail .v {
+        color: var(--fg);
+        word-break: break-all;
+      }
+      #detail details {
+        margin: 4px 0;
+      }
+      #detail summary {
+        cursor: pointer;
+        color: var(--cyan);
+        font-size: 11px;
+      }
+      #detail pre {
+        white-space: pre-wrap;
+        word-break: break-all;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 8px;
+        font: inherit;
+        font-size: 11px;
+        max-height: 200px;
+        overflow: auto;
+      }
+      .badge {
+        display: inline-block;
+        padding: 0 6px;
+        border-radius: 3px;
+        font-size: 10px;
+        border: 1px solid var(--border);
+        color: var(--fg);
+      }
+      footer {
+        padding: 5px 12px;
+        color: var(--muted);
+        font-size: 10px;
+        border-top: 1px solid var(--border);
+      }
+      .axis text {
+        fill: var(--muted);
+        font-size: 10px;
+        font-family: inherit;
+      }
+      .lanebg {
+        fill: var(--bg);
+      }
+      .lanebg.alt {
+        fill: #242830;
+      }
+      .lanebg.coord {
+        fill: var(--bg3);
+      }
+      .lanesep {
+        stroke: var(--bg3);
+      }
+      .empty {
+        padding: 20px;
+        color: var(--muted);
+      }
+      .seg {
+        display: flex;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        overflow: hidden;
+        flex: none;
+      }
+      .seg button {
+        border: none;
+        border-radius: 0;
+        background: var(--bg3);
+        color: var(--muted);
+        padding: 2px 10px;
+      }
+      .seg button.on {
+        background: var(--blue);
+        color: #282c34;
+        font-weight: 600;
+      }
+      #teamwrap {
+        flex: 1;
+        min-height: 0;
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      #replay {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg2);
+        flex-wrap: wrap;
+      }
+      #replay input[type='range'] {
+        flex: 1;
+        min-width: 120px;
+        accent-color: var(--cyan);
+      }
+      #replay .rt {
+        color: var(--bright);
+        font-size: 11px;
+        min-width: 96px;
+      }
+      #teamlegend {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 4px 12px;
+        font-size: 10px;
+        color: var(--muted);
+        border-bottom: 1px solid var(--border);
+        background: var(--bg2);
+        align-items: center;
+      }
+      #teamlegend .dot {
+        margin-right: 3px;
+      }
+      #team {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        overflow: hidden;
+      }
+      #groups {
+        padding: 10px 12px;
+        overflow: auto;
+        border-right: 1px solid var(--border);
+      }
+      #feed {
+        padding: 8px 10px;
+        overflow: auto;
+        background: var(--bg2);
+      }
+      #feed h4 {
+        margin: 0 0 6px;
+        font-size: 11px;
+        color: var(--bright);
+      }
+      @media (max-width: 720px) {
+        #team {
+          grid-template-columns: 1fr;
+          grid-template-rows: minmax(0, 1fr) 220px;
+        }
+        #groups {
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+      }
+      .grp {
+        margin-bottom: 12px;
+      }
+      .grp h4 {
+        margin: 0 0 6px;
+        font-size: 11px;
+        color: var(--bright);
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+        flex-wrap: wrap;
+      }
+      .grp h4 .gc {
+        color: var(--muted);
+        font-weight: 400;
+        font-size: 10px;
+      }
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 8px;
+      }
+      @media (max-width: 720px) {
+        .cards {
+          grid-template-columns: 1fr;
+        }
+      }
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--bg2);
+        padding: 8px;
+        cursor: pointer;
+        min-width: 0;
+      }
+      .card:hover {
+        border-color: var(--muted);
+      }
+      .card .top {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+      }
+      .card .top img,
+      .card .top svg {
+        width: 14px;
+        height: 14px;
+        flex: none;
+      }
+      .card .nm {
+        color: var(--bright);
+        font-size: 11px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+        min-width: 0;
+      }
+      .card .st {
+        flex: none;
+        font-size: 10px;
+        padding: 0 6px;
+        border-radius: 3px;
+        border: 1px solid;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .card .cur {
+        margin-top: 4px;
+        color: var(--fg);
+        font-size: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .card .meta {
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        display: inline-block;
+        flex: none;
+      }
+      .ev {
+        display: flex;
+        gap: 6px;
+        padding: 4px 2px;
+        border-bottom: 1px solid var(--bg3);
+        cursor: pointer;
+        font-size: 10px;
+        align-items: baseline;
+      }
+      .ev:hover {
+        background: var(--bg3);
+      }
+      .ev .et {
+        color: var(--muted);
+        flex: none;
+      }
+      .ev .ek {
+        flex: none;
+        font-weight: 600;
+      }
+      .ev .ep {
+        color: var(--fg);
+        flex: none;
+        max-width: 42%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .ev .es {
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+        min-width: 0;
+      }
+      #groups::-webkit-scrollbar,
+      #feed::-webkit-scrollbar,
+      #detail::-webkit-scrollbar {
+        width: 8px;
+      }
+      #groups::-webkit-scrollbar-track,
+      #feed::-webkit-scrollbar-track,
+      #detail::-webkit-scrollbar-track {
+        background: var(--bg);
+      }
+      #groups::-webkit-scrollbar-thumb,
+      #feed::-webkit-scrollbar-thumb,
+      #detail::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+      }
+      #groups::-webkit-scrollbar-thumb:hover,
+      #feed::-webkit-scrollbar-thumb:hover,
+      #detail::-webkit-scrollbar-thumb:hover {
+        background: var(--muted);
+      }
+      #officewrap {
+        flex: 1;
+        min-height: 0;
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      #oMain {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+      }
+      #oStage {
+        position: relative;
+        min-height: 0;
+        overflow: hidden;
+        background: #171a20;
+      }
+      #oStage canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        touch-action: none;
+        cursor: grab;
+      }
+      #oStage canvas:active {
+        cursor: grabbing;
+      }
+      #oVignette {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(
+          ellipse at 50% 42%,
+          transparent 55%,
+          rgba(10, 12, 17, 0.5) 100%
+        );
+      }
+      #oStagehint {
+        position: absolute;
+        left: 10px;
+        right: 10px;
+        bottom: 8px;
+        pointer-events: none;
+        color: var(--muted);
+        font-size: 10px;
+        background: rgba(33, 37, 43, 0.7);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 2px 8px;
+      }
+      #oFallback {
+        display: none;
+        position: absolute;
+        inset: 0;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 30px;
+        color: var(--yellow);
+        background: var(--bg2);
+        font-size: 12px;
+      }
+      #oSide {
+        border-left: 1px solid var(--border);
+        background: var(--bg2);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        min-width: 0;
+      }
+      #oDetail {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+        max-height: 46%;
+        overflow: auto;
+      }
+      #officewrap .muted {
+        color: var(--muted);
+      }
+      #officewrap .dhead {
+        color: var(--bright);
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 6px;
+      }
+      #officewrap .pill {
+        font-size: 10px;
+        font-weight: 400;
+        border: 1px solid;
+        border-radius: 3px;
+        padding: 0 6px;
+      }
+      #officewrap .drow {
+        display: flex;
+        gap: 8px;
+        margin: 3px 0;
+        font-size: 11px;
+      }
+      #officewrap .drow .k {
+        color: var(--muted);
+        flex: none;
+        width: 34px;
+      }
+      #officewrap .drow .v {
+        color: var(--fg);
+        word-break: break-all;
+      }
+      #officewrap .dbtns {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+      }
+      #oFeedwrap {
+        flex: 1;
+        min-height: 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      #oFeedwrap h4 {
+        margin: 0;
+        padding: 8px 12px 4px;
+        font-size: 11px;
+        color: var(--bright);
+      }
+      #oEvs {
+        flex: 1;
+        overflow: auto;
+        overflow-x: hidden;
+        padding: 0 10px 10px;
+      }
+      #oEvs .ev {
+        min-width: 0;
+      }
+      #oEvs .ep {
+        flex: 0 1 auto;
+        min-width: 0;
+        max-width: 38%;
+      }
+      #oEvs::-webkit-scrollbar,
+      #oDetail::-webkit-scrollbar {
+        width: 8px;
+      }
+      #oEvs::-webkit-scrollbar-track,
+      #oDetail::-webkit-scrollbar-track {
+        background: var(--bg2);
+      }
+      #oEvs::-webkit-scrollbar-thumb,
+      #oDetail::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+      }
+      #oEvs::-webkit-scrollbar-thumb:hover,
+      #oDetail::-webkit-scrollbar-thumb:hover {
+        background: var(--muted);
+      }
+      #oDeck {
+        border-top: 1px solid var(--border);
+        background: var(--bg2);
+        padding: 7px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .orow {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .orow label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        color: var(--fg);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .orow .ort {
+        color: var(--bright);
+        font-size: 11px;
+        min-width: 92px;
+      }
+      .orow .oval {
+        color: var(--cyan);
+        font-size: 11px;
+        min-width: 34px;
+      }
+      #officewrap input[type='range'] {
+        accent-color: var(--cyan);
+        height: 4px;
+        cursor: pointer;
+      }
+      #oScrub {
+        flex: 1;
+        min-width: 140px;
+      }
+      #oSpeed {
+        width: 90px;
+      }
+      #oGlow {
+        width: 80px;
+      }
+      #oZoom {
+        width: 80px;
+      }
+      #officewrap input[type='checkbox'] {
+        accent-color: var(--cyan);
+        cursor: pointer;
+      }
+      .osep {
+        width: 1px;
+        height: 16px;
+        background: var(--border);
+      }
+      @media (max-width: 900px) {
+        #oMain {
+          grid-template-columns: minmax(0, 1fr);
+          grid-template-rows: minmax(240px, 1fr) 220px;
+        }
+        #oSide {
+          border-left: none;
+          border-top: 1px solid var(--border);
+          flex-direction: row;
+        }
+        #oDetail {
+          max-height: none;
+          width: 46%;
+          border-bottom: none;
+          border-right: 1px solid var(--border);
+        }
+        #oFeedwrap {
+          flex: 1;
+        }
+      }
+      @media (max-width: 560px) {
+        #oSide {
+          flex-direction: column;
+        }
+        #oDetail {
+          width: 100%;
+          max-height: 40%;
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+        header .stats {
+          flex-basis: 100%;
+          order: 9;
+          white-space: normal;
+          overflow-wrap: anywhere;
+          font-size: 10px;
+        }
+        header .toggles {
+          margin-left: 0;
+        }
+      }
+      #oHud {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        right: 8px;
+        z-index: 3;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        pointer-events: none;
+      }
+      #oHud .oh {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 10px;
+        color: var(--fg);
+        background: rgba(13, 16, 24, 0.72);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 2px 9px;
+      }
+      #oHud .oh b {
+        color: var(--bright);
+        font-size: 11px;
+      }
+      #oHud .oclk {
+        margin-left: auto;
+        color: var(--cyan);
+        font-family: 'JetBrains Mono', monospace;
+      }
+      #oRosterWrap {
+        flex: 1 1 42%;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        border-bottom: 1px solid var(--border);
+      }
+      #oRosterWrap h4 {
+        margin: 0;
+        padding: 8px 12px 4px;
+        font-size: 11px;
+        color: var(--bright);
+        display: flex;
+        gap: 6px;
+        align-items: baseline;
+      }
+      #oRoster {
+        flex: 1;
+        overflow: auto;
+        overflow-x: hidden;
+        padding: 0 6px 6px;
+      }
+      #oDetail {
+        max-height: 30%;
+        flex: none;
+      }
+      #oFeedwrap {
+        flex: 1 1 30%;
+      }
+      .orow2 {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 5px 6px;
+        border-radius: 5px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        min-width: 0;
+      }
+      .orow2:hover {
+        background: var(--bg3);
+      }
+      .orow2.sel {
+        background: rgba(86, 182, 194, 0.12);
+        border-color: rgba(86, 182, 194, 0.4);
+      }
+      .odot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex: none;
+      }
+      .ometa {
+        flex: 1;
+        min-width: 0;
+      }
+      .onm {
+        font-size: 11px;
+        color: var(--bright);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .otask {
+        font-size: 9px;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .opill {
+        flex: none;
+        font-size: 9px;
+        border: 1px solid;
+        border-radius: 3px;
+        padding: 0 5px;
+      }
+      #oRoster::-webkit-scrollbar {
+        width: 8px;
+      }
+      #oRoster::-webkit-scrollbar-track {
+        background: var(--bg2);
+      }
+      #oRoster::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+      }
+      #oRoster::-webkit-scrollbar-thumb:hover {
+        background: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1 id="title">Trace Waterfall</h1>
+      <select id="run" title="Orchestration run"></select>
+      <button id="refresh" title="重新读取 orchestration.db">刷新</button>
+      <div class="seg">
+        <button id="vTime" class="on">时间轴</button><button id="vTeam">团队</button
+        ><button id="vOffice">办公室</button>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="toggles">
+        <label><input type="checkbox" id="tgSupp" checked /> 补充/改要求</label>
+        <label><input type="checkbox" id="tgInstr" /> 全部指令</label>
+        <label><input type="checkbox" id="tgConn" checked /> 连线</label>
+        <button id="reset">重置视图</button>
+      </div>
+    </header>
+    <div id="legend">
+      <span class="it"><span class="sw" style="background: var(--blue)"></span>实心=在干活</span>
+      <span class="it"><span class="sw hatch"></span>斜纹=阻塞等回复(推断)</span>
+      <span class="it">重叠=并发 <b id="maxc" style="color: var(--bright)"></b></span>
+      <span class="it"><span style="color: var(--cyan)">↓</span>派发</span>
+      <span class="it"><span style="color: var(--green)">↑</span>回报</span>
+      <span class="it"><span style="color: var(--blue)">↑</span>评审就绪</span>
+      <span class="it"><span style="color: var(--orange)">↑</span>求助/升级</span>
+      <span class="it"><span style="color: var(--purple)">↑</span>提问</span>
+      <span class="it"><span style="color: var(--cyan)">⇄</span>交接</span>
+      <span class="it"
+        ><span class="tri" style="border-top: 7px solid var(--yellow)"></span>补充/改要求</span
+      >
+      <span class="it"
+        ><span class="tri" style="border-top: 7px solid var(--red)"></span>停止/取消</span
+      >
+      <span class="it"
+        ><span class="tri" style="border-top: 7px solid var(--muted)"></span>一般指令</span
+      >
+    </div>
+    <div id="wrap">
+      <div id="labels"></div>
+      <div id="chart-scroll"><svg id="svg"></svg></div>
+    </div>
+    <div id="teamwrap">
+      <div id="replay">
+        <button id="play" title="回放整个 run">▶</button>
+        <input type="range" id="scrub" title="回放游标" />
+        <span class="rt" id="rtime"></span>
+        <button id="toEnd" title="跳到 run 结束">结束</button>
+      </div>
+      <div id="teamlegend">
+        <span><span class="dot" style="background: var(--blue)"></span>干活中</span>
+        <span><span class="dot" style="background: var(--yellow)"></span>等回复</span>
+        <span><span class="dot" style="background: var(--green)"></span>已完成</span>
+        <span><span class="dot" style="background: var(--red)"></span>失败</span>
+        <span><span class="dot" style="background: var(--orange)"></span>已停止</span>
+        <span><span class="dot" style="background: var(--muted)"></span>空闲/未开始</span>
+        <span style="margin-left: auto">游标=回放时刻 · 点卡片看输入/输出 · 点活动看消息</span>
+      </div>
+      <div id="team">
+        <div id="groups"></div>
+        <div id="feed">
+          <h4>活动流</h4>
+          <div id="evs"></div>
+        </div>
+      </div>
+    </div>
+    <div id="officewrap" hidden></div>
+    <div id="redesign" style="display: none; flex: 1; min-height: 0; overflow: auto">
+      <header class="app-header">
+        <div class="brand-row">
+          <b>Orca 协作</b><span class="prototype-badge">只读记录 · 处理为模拟</span
+          ><button class="text-button" id="help">使用说明</button>
+        </div>
+        <div class="goal-row">
+          <div>
+            <p class="eyebrow">本次协作目标</p>
+            <h1 id="goal">正在读取真实快照…</h1>
+            <p id="source-caption" class="source-caption"></p>
+          </div>
+          <div class="header-actions">
+            <button id="choose-run">选择协作记录</button
+            ><button id="snapshot-refresh">重新读取快照</button>
+          </div>
+        </div>
+        <nav class="view-tabs" aria-label="工作视图">
+          <button data-view="overview" aria-selected="true">任务总览</button
+          ><button data-view="office" aria-selected="false">办公室</button
+          ><button data-view="recap" aria-selected="false">执行复盘</button>
+        </nav>
+      </header>
+      <div id="notice" class="notice" role="status" hidden></div>
+      <main class="workspace">
+        <div class="view-content">
+          <section id="view-overview" aria-label="任务总览">
+            <div class="section-intro">
+              <h2>先看需要关注的事</h2>
+              <p>按任务查看推进情况、阻塞记录与回报。编排结束不代表业务已经验收。</p>
+            </div>
+            <div id="metrics" class="metrics"></div>
+            <div class="filters">
+              <label class="search"
+                ><span>搜索</span
+                ><input id="search" type="search" placeholder="任务目标、工作线或执行会话" /></label
+              ><label
+                >状态<select id="status">
+                  <option value="all">待关注与推进中</option>
+                  <option value="attention">需查看</option>
+                  <option value="reported">已回报待确认</option>
+                  <option value="running">执行中</option>
+                  <option value="starting">待启动</option>
+                  <option value="ended">已结束</option>
+                </select></label
+              ><label
+                >排序<select id="sort">
+                  <option value="priority">关注优先</option>
+                  <option value="recent">最近更新</option>
+                </select></label
+              >
+            </div>
+            <div id="task-list"></div>
+            <button id="completed-toggle" class="completed-toggle"></button>
+          </section>
+          <section id="view-office" aria-label="办公室定位" hidden>
+            <div class="section-intro">
+              <h2>找到正在协作的会话</h2>
+              <p>从任务定位到工位，点人物看其当前任务。外观是场景角色，会话身份来自真实记录。</p>
+            </div>
+            <div class="office-card">
+              <div id="office-stage" class="office-stage">
+                <div
+                  id="office-viewport"
+                  tabindex="0"
+                  aria-label="套间：拖拽旋转、滚轮缩放、点击人物看任务"
+                ></div>
+                <div class="office-cameras">
+                  <button data-office-camera="room">全景</button
+                  ><button data-office-camera="person">人物近景</button
+                  ><button data-office-camera="top">俯视</button
+                  ><button id="office-computer">电脑内容</button>
+                </div>
+              </div>
+              <div class="office-page">
+                <button id="office-prev">上一页</button><span id="office-page"></span
+                ><button id="office-next">下一页</button>
+              </div>
+              <p id="office-source" class="muted"></p>
+              <p id="office-locator" role="status"></p>
+            </div>
+            <div id="office-roster" class="office-roster"></div>
+          </section>
+          <section id="view-recap" aria-label="执行复盘" hidden>
+            <div class="section-intro">
+              <h2>看清派发、等待与交接</h2>
+              <p>横条是派发区间，不代表一直工作；斜纹等待段来自提问与回复关系推断。</p>
+            </div>
+            <div class="recap-tools">
+              <label>起始时间<input id="from-time" type="datetime-local" /></label
+              ><label>结束时间<input id="to-time" type="datetime-local" /></label
+              ><button id="apply-window">应用时间窗</button><button id="zoom-in">放大</button
+              ><button id="zoom-out">缩小</button><button id="reset-window">重置</button
+              ><label class="checkbox"
+                ><input id="show-lines" type="checkbox" />仅显示选中任务的关联连线</label
+              >
+            </div>
+            <p id="recap-window" class="muted"></p>
+            <div id="recap-board" class="recap-board"></div>
+            <div id="recap-events" class="recap-events"></div>
+          </section>
+        </div>
+        <aside id="drawer" class="drawer" aria-label="任务详情" hidden></aside>
+      </main>
+      <footer>
+        真实数据快照；「处理这件事」仅演示填写到本地示意回执，不实际发送，不改变任务状态。
+      </footer>
+      <dialog id="run-dialog">
+        <div class="dialog-head">
+          <h2>选择协作记录</h2>
+          <button data-close-dialog aria-label="关闭记录选择">关闭</button>
+        </div>
+        <p>完整目标和快照时点在这里查看，选择后清除上一条记录的定位。</p>
+        <div id="run-options"></div>
+      </dialog>
+      <dialog id="help-dialog">
+        <div class="dialog-head">
+          <h2>这三个视图怎么用</h2>
+          <button data-close-dialog aria-label="关闭使用说明">关闭</button>
+        </div>
+        <p>
+          <b>任务总览：</b>先看需查看的失败/阻塞记录，再看已回报与执行中的任务；已结束项默认折叠。
+        </p>
+        <p>
+          <b>办公室：</b
+          >用来定位执行会话；任务和人物共享详情。每页九席，活跃会话首批优先入席，翻页不改变身份。
+        </p>
+        <p>
+          <b>执行复盘：</b>默认最近十二小时、不铺全网连线；选择任务后可聚焦其派发区间和相关消息。
+        </p>
+        <p>
+          <b>真实数据快照：</b
+          >时间代表读取时点。点“重新读取快照”才会经原插件再次只读取数，页面不自动跟踪，不把回报当业务验收。
+        </p>
+        <p>
+          仅可显式点击打开原会话；完整输入和技术标识收在详情折叠项。源码、构建脚本与许可证随本地目录保留。
+        </p>
+      </dialog>
+    </div>
+    <div id="detail">
+      <span style="color: var(--muted)"
+        >点击横条看输入/输出；点击连线/三角看消息。滚轮缩放，拖动平移，双击重置。</span
+      >
+    </div>
+    <div id="tip"></div>
+    <footer id="foot">
+      只读 orchestration.db。等待段与「补充/停止」分类为推断（Orca 未显式记录同步/异步）。
+    </footer>
+    <script src="../dist/office.js"></script>
+    <script defer src="../dist/redesign.js"></script>
+    <link rel="stylesheet" href="../dist/redesign.css" />
+    <script>
+      const LOGOS = {
+        openai:
+          '<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>OpenAI</title><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg>',
+        orca: 'data:image/png;base64,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',
+        anthropic:
+          '<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>Anthropic</title><path d="M17.3041 3.541h-3.6718l6.696 16.918H24Zm-10.6082 0L0 20.459h3.7442l1.3693-3.5527h7.0052l1.3693 3.5528h3.7442L10.5363 3.5409Zm-.3712 10.2232 2.2914-5.9456 2.2914 5.9456Z"/></svg>'
+      }
+      const ROW = 48,
+        AXIS = 26,
+        PAD_R = 16,
+        NS = 'http://www.w3.org/2000/svg'
+      const svg = document.getElementById('svg'),
+        scroll = document.getElementById('chart-scroll')
+      const labelsEl = document.getElementById('labels'),
+        tip = document.getElementById('tip'),
+        detail = document.getElementById('detail')
+      const runSelect = document.getElementById('run')
+      const COLORS = {
+        dispatch: '#56b6c2',
+        worker_done: '#98c379',
+        merge_ready: '#61afef',
+        escalation: '#d19a66',
+        question: '#c678dd',
+        handoff: '#56b6c2',
+        question_lat: '#c678dd',
+        supplement: '#e5c07b',
+        stop: '#e06c75',
+        instr: '#5c6370'
+      }
+      const BARCOL = {
+        succeeded: '#61afef',
+        failed: '#e06c75',
+        stopped: '#d19a66',
+        abandoned: '#5c6370'
+      }
+      const KIND_ZH = {
+        dispatch: '派发',
+        worker_done: '回报',
+        merge_ready: '评审就绪',
+        escalation: '求助/升级',
+        question: '提问',
+        handoff: '交接',
+        question_lat: '提问(点对点)',
+        supplement: '补充/改要求',
+        stop: '停止/取消',
+        instr: '指令'
+      }
+      let D = null,
+        lanes = [],
+        bars = [],
+        waits = [],
+        conn = [],
+        details = {},
+        msgMap = {},
+        maxC = 0
+      let t0 = 0,
+        t1 = 1,
+        FULL = [0, 1],
+        W = 800,
+        NL = 1
+      let view = 'timeline',
+        curT = 0,
+        playing = false,
+        playTimer = 0,
+        lastPlayTs = 0,
+        groups = [],
+        laneDisp = []
+      const H = () => AXIS + NL * ROW + 8
+
+      function esc(s) {
+        return String(s ?? '').replace(
+          /[&<>"]/g,
+          (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]
+        )
+      }
+      function fmtT(ms) {
+        const d = new Date(ms)
+        return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
+      }
+      function fmtDur(ms) {
+        if (ms == null) return '—'
+        const s = Math.round(ms / 1000)
+        if (s < 60) return s + 's'
+        const m = Math.floor(s / 60)
+        if (m < 60) return m + 'm' + (s % 60 ? ' ' + (s % 60) + 's' : '')
+        const h = Math.floor(m / 60)
+        return h + 'h ' + (m % 60) + 'm'
+      }
+      const x = (t) => ((t - t0) / (t1 - t0)) * W
+      const laneY = (i) => AXIS + i * ROW,
+        laneC = (i) => laneY(i) + ROW / 2
+      function el(tag, attrs, parent) {
+        const e = document.createElementNS(NS, tag)
+        for (const k in attrs) e.setAttribute(k, attrs[k])
+        if (parent) parent.appendChild(e)
+        return e
+      }
+      function logo(agent, size) {
+        if (agent === 'orca')
+          return (
+            '<img src="' +
+            LOGOS.orca +
+            '" width="' +
+            size +
+            '" height="' +
+            size +
+            '" style="border-radius:4px">'
+          )
+        const key = agent === 'claude' ? 'anthropic' : 'openai'
+        const src = LOGOS[key] || LOGOS.openai
+        return src.replace('<svg', '<svg fill="#abb2bf" width="' + size + '" height="' + size + '"')
+      }
+      function classify(s) {
+        s = s || ''
+        if (/暂停|停止|取消|勿|不要|不清|不重/.test(s)) return 'stop'
+        if (
+          /用户确认|用户已确认|用户明确|用户新|用户扩大|用户再次|用户要求|用户追问|授权|已确认|确认/.test(
+            s
+          )
+        )
+          return 'supplement'
+        return 'instr'
+      }
+
+      function processData(data) {
+        D = data
+        const nodes = data.nodes,
+          messages = data.messages
+        const byId = {}
+        nodes.forEach((n) => (byId[n.id] = n))
+        const dispatches = nodes.filter((n) => n.kind === 'dispatch')
+        const runNode = nodes.find((n) => n.kind === 'run')
+        const coordTerm = runNode?.session?.terminalId || ''
+        const laneMap = {}
+        const laneOfTerm = {}
+        laneOfTerm[coordTerm] = 0
+        for (const dp of dispatches) {
+          const t = dp.session?.terminalId || dp.terminalId || ''
+          if (!laneMap[t])
+            laneMap[t] = {
+              terminal: t,
+              agent: dp.agent || dp.session?.agent || '',
+              worktree: dp.label,
+              titles: [],
+              dispatches: []
+            }
+          laneMap[t].dispatches.push(dp.id)
+          const st = dp.shortTitle || dp.goal || dp.label
+          if (st && !laneMap[t].titles.includes(st)) laneMap[t].titles.push(st)
+          if ((dp.agent || dp.session?.agent) && !laneMap[t].agent)
+            laneMap[t].agent = dp.agent || dp.session?.agent
+        }
+        const workers = Object.values(laneMap).sort(
+          (a, b) =>
+            Math.min(...a.dispatches.map((i) => byId[i].start || 0)) -
+            Math.min(...b.dispatches.map((i) => byId[i].start || 0))
+        )
+        // Readable lane name = the task's short title (not the raw worktree/branch name); dedup repeats.
+        const baseCount = {}
+        workers.forEach((L) => {
+          L.base = L.titles[0] || L.worktree
+          baseCount[L.base] = (baseCount[L.base] || 0) + 1
+        })
+        const seen = {}
+        workers.forEach((L, i) => {
+          seen[L.base] = (seen[L.base] || 0) + 1
+          L.name = L.base
+          L.dup = baseCount[L.base] > 1 ? seen[L.base] : 0
+          laneOfTerm[L.terminal] = i + 1
+        })
+        lanes = [
+          {
+            idx: 0,
+            name: '协调者 · Router',
+            agent: 'orca',
+            terminal: coordTerm,
+            full: '路由 · 汇总 · 对人',
+            worktree: '',
+            dup: 0
+          }
+        ]
+        workers.forEach((L, i) =>
+          lanes.push({
+            idx: i + 1,
+            name: L.name,
+            full: L.titles.join(' / '),
+            worktree: L.worktree,
+            agent: L.agent || 'codex',
+            terminal: L.terminal,
+            n: L.dispatches.length,
+            dup: L.dup
+          })
+        )
+        NL = lanes.length
+        const laneOfNode = (nid) => {
+          const n = byId[nid]
+          if (!n) return null
+          if (n.kind === 'run') return 0
+          if (n.kind === 'dispatch')
+            return laneOfTerm[n.session?.terminalId || n.terminalId] ?? null
+          return null
+        }
+        const laneOfHandle = (h) => {
+          if (!h) return null
+          if (h.startsWith('run:')) return 0
+          if (h.startsWith('dispatch:')) return laneOfNode(h.slice(9))
+          return laneOfTerm[h] ?? null
+        }
+        bars = dispatches.map((dp) => ({
+          id: dp.id,
+          lane: laneOfTerm[dp.session?.terminalId || dp.terminalId],
+          start: dp.start,
+          end: dp.end || dp.start,
+          status: dp.status,
+          failed: dp.failed,
+          label: dp.label,
+          shortTitle: dp.shortTitle || dp.label,
+          taskId: dp.parentId
+        }))
+        const barById = {}
+        bars.forEach((b) => (barById[b.id] = b))
+        // waits
+        let rawWaits = []
+        for (const dp of dispatches) {
+          const outs = messages.filter(
+            (m) =>
+              m.fromNodeId === dp.id &&
+              (m.type === 'question' || m.type === 'escalation') &&
+              !(m.subject || '').startsWith('Worker stopped')
+          )
+          for (const q of outs) {
+            let reply = null
+            for (const m of messages) {
+              if (m.at > q.at && m.toNodeId === dp.id) {
+                if (!reply || m.at < reply.at) reply = m
+              }
+            }
+            const end = reply ? reply.at : dp.end || q.at
+            if (end > q.at)
+              rawWaits.push({
+                dispatch: dp.id,
+                lane: barById[dp.id].lane,
+                start: q.at,
+                end,
+                resolved: !!reply,
+                type: q.type,
+                msgId: q.id
+              })
+          }
+        }
+        const grouped = {}
+        rawWaits.forEach((w) => (grouped[w.dispatch] = grouped[w.dispatch] || []).push(w))
+        waits = []
+        for (const did in grouped) {
+          const ws = grouped[did].sort((a, b) => a.start - b.start)
+          let cur = null
+          for (const w of ws) {
+            if (cur && w.start <= cur.end) {
+              cur.end = Math.max(cur.end, w.end)
+              cur.resolved = cur.resolved || w.resolved
+            } else {
+              if (cur) waits.push(cur)
+              cur = { ...w }
+            }
+          }
+          if (cur) waits.push(cur)
+        }
+        // connectors
+        conn = []
+        for (const dp of dispatches)
+          conn.push({
+            kind: 'dispatch',
+            from: 0,
+            to: barById[dp.id].lane,
+            at: dp.start,
+            msgId: null,
+            dispatchId: dp.id,
+            subject: '派发：' + (dp.shortTitle || dp.label)
+          })
+        for (const m of messages) {
+          if (m.type === 'heartbeat') continue
+          let fl = laneOfNode(m.fromNodeId)
+          if (fl == null) fl = laneOfHandle(m.fromHandle)
+          let tl = laneOfHandle(m.toHandle)
+          if (tl == null) tl = laneOfNode(m.toNodeId)
+          if (m.type === 'status') {
+            if (fl === 0 && tl && tl !== 0)
+              conn.push({
+                kind: 'supplement',
+                cls: classify(m.subject),
+                from: 0,
+                to: tl,
+                at: m.at,
+                msgId: m.id,
+                subject: m.subject || ''
+              })
+            continue
+          }
+          if (fl == null || tl == null) continue
+          if (['worker_done', 'merge_ready', 'escalation', 'question'].includes(m.type) && tl === 0)
+            conn.push({
+              kind: m.type,
+              from: fl,
+              to: 0,
+              at: m.at,
+              msgId: m.id,
+              subject: m.subject || ''
+            })
+          else if ((m.type === 'handoff' || m.type === 'question') && tl !== 0)
+            conn.push({
+              kind: m.type === 'handoff' ? 'handoff' : 'question_lat',
+              from: fl,
+              to: tl,
+              at: m.at,
+              msgId: m.id,
+              subject: m.subject || ''
+            })
+          else if (m.type === 'handoff' && tl === 0)
+            conn.push({
+              kind: 'handoff',
+              from: fl,
+              to: 0,
+              at: m.at,
+              msgId: m.id,
+              subject: m.subject || ''
+            })
+        }
+        // concurrency
+        const ev = []
+        bars.forEach((b) => {
+          ev.push([b.start, 1])
+          ev.push([b.end, -1])
+        })
+        ev.sort((a, b) => a[0] - b[0])
+        let c = 0
+        maxC = 0
+        for (const [, d] of ev) {
+          c += d
+          maxC = Math.max(maxC, c)
+        }
+        details = {}
+        nodes.forEach((n) => (details[n.id] = n))
+        msgMap = {}
+        messages.forEach((m) => (msgMap[m.id] = m))
+        FULL = [runNode.start, runNode.end]
+        t0 = FULL[0]
+        t1 = FULL[1]
+        // team view model: dispatches per lane + groups by root task line
+        laneDisp = lanes.map(() => [])
+        for (const dp of dispatches) {
+          const li = laneOfTerm[dp.session?.terminalId || dp.terminalId]
+          if (li != null) laneDisp[li].push(dp)
+        }
+        laneDisp.forEach((a) => a.sort((x, y) => (x.start || 0) - (y.start || 0)))
+        const rootOf = (n) => {
+          let cur = n
+          while (cur && cur.parentId && byId[cur.parentId] && byId[cur.parentId].kind !== 'run')
+            cur = byId[cur.parentId]
+          return cur && cur.kind === 'task' ? cur.id : 'direct'
+        }
+        const gm = {}
+        for (let i = 1; i < lanes.length; i++) {
+          const ds = laneDisp[i]
+          if (!ds.length) continue
+          const gid = rootOf(ds[0])
+          const gname =
+            gid === 'direct' ? '直接派发' : byId[gid]?.shortTitle || byId[gid]?.label || gid
+          const g =
+            gm[gname] || (gm[gname] = { id: gname, name: gname, lanes: [], first: Infinity })
+          g.lanes.push(i)
+          g.first = Math.min(g.first, ds[0].start || 0)
+        }
+        groups = Object.values(gm).sort((a, b) => a.first - b.first)
+        curT = FULL[1]
+      }
+
+      function buildLabels() {
+        labelsEl.innerHTML = ''
+        const sp = document.createElement('div')
+        sp.style.height = AXIS + 'px'
+        labelsEl.appendChild(sp)
+        for (const L of lanes) {
+          const div = document.createElement('div')
+          div.className = 'lane-label' + (L.idx === 0 ? ' coord' : '')
+          const chars = [...L.name]
+          const disp = chars.length > 12 ? chars.slice(0, 11).join('') + '…' : L.name
+          div.title =
+            (L.full || L.name) + (L.worktree ? '\n工作区 ' + L.worktree : '') + '\n' + L.terminal
+          div.innerHTML =
+            logo(L.agent, 16) +
+            '<div style="min-width:0"><div class="nm">' +
+            esc(disp) +
+            '</div><div class="sub">' +
+            (L.idx === 0
+              ? '路由 · 汇总 · 对人'
+              : (L.dup ? '#' + L.dup + ' · ' : '') + esc(L.agent) + ' · ' + L.n + ' 派发') +
+            '</div></div>'
+          labelsEl.appendChild(div)
+        }
+      }
+      const activeAt = (t) => bars.reduce((n, b) => n + (b.start <= t && t < b.end ? 1 : 0), 0)
+
+      function laneStatus(i, T) {
+        const ds = laneDisp[i] || []
+        const w = waits.find((w) => w.lane === i && w.start <= T && T < w.end)
+        const act = ds.find((d) => d.start <= T && (d.end == null || T < d.end))
+        if (w)
+          return {
+            key: 'waiting',
+            zh: '等回复',
+            col: 'var(--yellow)',
+            line: '等回复 · ' + ((msgMap[w.msgId] || {}).subject || '').slice(0, 20),
+            dp: act || ds.filter((d) => d.start <= T).pop() || ds[0]
+          }
+        if (act)
+          return {
+            key: 'working',
+            zh: '干活中',
+            col: 'var(--blue)',
+            line: act.shortTitle || act.label,
+            dp: act
+          }
+        const past = ds.filter((d) => d.start <= T)
+        if (!past.length)
+          return { key: 'pending', zh: '未开始', col: 'var(--muted)', line: '尚未派发', dp: ds[0] }
+        const last = past[past.length - 1]
+        if (last.end == null || last.end > T)
+          return {
+            key: 'working',
+            zh: '干活中',
+            col: 'var(--blue)',
+            line: last.shortTitle || last.label,
+            dp: last
+          }
+        const next = ds.find((d) => d.start > T)
+        if (next)
+          return {
+            key: 'idle',
+            zh: '空闲',
+            col: 'var(--muted)',
+            line: '空闲 · 下一段 ' + fmtT(next.start),
+            dp: last
+          }
+        const st = last.failed
+          ? 'failed'
+          : /stop|abandon/.test(last.status || '')
+            ? 'stopped'
+            : 'done'
+        const col = { failed: 'var(--red)', done: 'var(--green)', stopped: 'var(--orange)' }[st]
+        return {
+          key: st,
+          zh: { failed: '失败', done: '已完成', stopped: '已停止' }[st],
+          col,
+          line: (last.shortTitle || last.label) + ' · ' + fmtT(last.end),
+          dp: last
+        }
+      }
+      function renderTeam() {
+        if (!D) return
+        const T = curT
+        document.getElementById('rtime').textContent = fmtT(T) + ' · ∥' + activeAt(T)
+        const scrub = document.getElementById('scrub')
+        scrub.min = FULL[0]
+        scrub.max = FULL[1]
+        scrub.step = 1000
+        scrub.value = T
+        const gs = []
+        for (const g of groups) {
+          let nw = 0,
+            nwait = 0,
+            nd = 0
+          const cards = g.lanes
+            .map((i) => {
+              const s = laneStatus(i, T)
+              if (s.key === 'working') nw++
+              else if (s.key === 'waiting') nwait++
+              else if (s.key === 'done') nd++
+              const L = lanes[i]
+              return (
+                '<div class="card" data-lane="' +
+                i +
+                '" title="' +
+                esc(L.full || L.name) +
+                '\n' +
+                esc(L.worktree) +
+                '"><div class="top">' +
+                logo(L.agent, 14) +
+                '<span class="nm">' +
+                esc(L.name) +
+                (L.dup ? ' <span style="color:var(--muted)">#' + L.dup + '</span>' : '') +
+                '</span><span class="st" style="color:' +
+                s.col +
+                ';border-color:' +
+                s.col +
+                '"><span class="dot" style="background:' +
+                s.col +
+                '"></span>' +
+                s.zh +
+                '</span></div><div class="cur">' +
+                esc(s.line) +
+                '</div><div class="meta">' +
+                esc(L.agent) +
+                ' · ' +
+                L.n +
+                ' 派发 · ' +
+                esc(L.worktree) +
+                '</div></div>'
+              )
+            })
+            .join('')
+          gs.push(
+            '<div class="grp"><h4>' +
+              esc(g.name) +
+              '<span class="gc">' +
+              g.lanes.length +
+              ' worker · ' +
+              nw +
+              ' 干活 · ' +
+              nwait +
+              ' 等回复 · ' +
+              nd +
+              ' 完成</span></h4><div class="cards">' +
+              cards +
+              '</div></div>'
+          )
+        }
+        document.getElementById('groups').innerHTML =
+          gs.join('') || '<div class="empty">无派发</div>'
+        document.querySelectorAll('#groups .card').forEach(
+          (c) =>
+            (c.onclick = () => {
+              const s = laneStatus(+c.dataset.lane, curT)
+              const b = bars.find((b) => b.id === (s.dp && s.dp.id))
+              if (b) showBar(b)
+            })
+        )
+        const evs = conn
+          .filter((c) => c.at <= T && c.kind !== 'instr')
+          .sort((a, b) => b.at - a.at)
+          .slice(0, 80)
+        document.getElementById('evs').innerHTML =
+          evs
+            .map(
+              (c, idx) =>
+                '<div class="ev" data-i="' +
+                idx +
+                '"><span class="et">' +
+                fmtT(c.at) +
+                '</span><span class="ek" style="color:' +
+                COLORS[c.kind] +
+                '">' +
+                KIND_ZH[c.kind] +
+                '</span><span class="ep">' +
+                esc(lanes[c.from]?.name || '?') +
+                '→' +
+                esc(lanes[c.to]?.name || '?') +
+                '</span><span class="es">' +
+                esc((c.subject || '').slice(0, 40)) +
+                '</span></div>'
+            )
+            .join('') || '<div class="empty">游标前无活动</div>'
+        document
+          .querySelectorAll('#evs .ev')
+          .forEach((r) => (r.onclick = () => showConn(evs[+r.dataset.i])))
+      }
+      function stopPlay() {
+        playing = false
+        clearInterval(playTimer)
+        playTimer = 0
+        lastPlayTs = 0
+        document.getElementById('play').textContent = '▶'
+      }
+      function tick() {
+        if (!playing) return
+        const ts = performance.now()
+        if (!lastPlayTs) lastPlayTs = ts
+        const dt = ts - lastPlayTs
+        lastPlayTs = ts
+        curT = Math.min(FULL[1], curT + (dt * (FULL[1] - FULL[0])) / 60000)
+        renderTeam()
+        if (curT >= FULL[1]) stopPlay()
+      }
+      function setView(v) {
+        view = v
+        stopPlay()
+        document.getElementById('vTime').classList.toggle('on', v === 'timeline')
+        document.getElementById('vTeam').classList.toggle('on', v === 'team')
+        document.getElementById('vOffice').classList.toggle('on', v === 'office')
+        document.getElementById('wrap').style.display = v === 'timeline' ? 'flex' : 'none'
+        document.getElementById('legend').style.display = v === 'timeline' ? 'flex' : 'none'
+        document.querySelector('.toggles').style.display = v === 'timeline' ? 'flex' : 'none'
+        document.getElementById('teamwrap').style.display = v === 'team' ? 'flex' : 'none'
+        document.getElementById('officewrap').style.display = 'none'
+        document.getElementById('redesign').style.display = v === 'office' ? 'block' : 'none'
+        window.TraceRedesign?.show(v === 'office')
+        detail.style.display = v === 'office' ? 'none' : 'block'
+        if (window.OfficeView) OfficeView.show(false)
+        if (window.OfficeLive) OfficeLive.show(v === 'office')
+        detail.innerHTML =
+          '<span style="color:var(--muted)">' +
+          (v === 'team'
+            ? '点卡片看该 worker 当前任务的输入/输出；点活动流看消息正文。▶ 回放整个 run，拖动游标看任意时刻。'
+            : '点击横条看输入/输出；点击连线/三角看消息。滚轮缩放，拖动平移，双击重置。') +
+          '</span>'
+        if (v === 'team') {
+          curT = FULL[1]
+          renderTeam()
+        } else if (v === 'timeline') render()
+      }
+      document.getElementById('vTime').onclick = () => setView('timeline')
+      document.getElementById('vTeam').onclick = () => setView('team')
+      document.getElementById('vOffice').onclick = () => setView('office')
+      document.getElementById('play').onclick = () => {
+        if (playing) {
+          stopPlay()
+          return
+        }
+        if (curT >= FULL[1]) curT = FULL[0]
+        playing = true
+        lastPlayTs = 0
+        document.getElementById('play').textContent = '⏸'
+        playTimer = setInterval(tick, 50)
+      }
+      document.getElementById('scrub').oninput = (e) => {
+        stopPlay()
+        curT = +e.target.value
+        renderTeam()
+      }
+      document.getElementById('toEnd').onclick = () => {
+        stopPlay()
+        curT = FULL[1]
+        renderTeam()
+      }
+
+      function render() {
+        if (!D) return
+        W = Math.max(320, scroll.clientWidth - PAD_R)
+        svg.setAttribute('width', W + PAD_R)
+        svg.setAttribute('height', H())
+        svg.innerHTML = ''
+        const defs = el('defs', {}, svg)
+        const pat = el(
+          'pattern',
+          {
+            id: 'hatch',
+            width: 6,
+            height: 6,
+            patternUnits: 'userSpaceOnUse',
+            patternTransform: 'rotate(45)'
+          },
+          defs
+        )
+        el('rect', { width: 6, height: 6, fill: 'rgba(229,192,123,0.12)' }, pat)
+        el('line', { x1: 0, y1: 0, x2: 0, y2: 6, stroke: '#e5c07b', 'stroke-width': 2 }, pat)
+        for (const k in COLORS) {
+          const m = el(
+            'marker',
+            {
+              id: 'ar-' + k,
+              viewBox: '0 0 8 8',
+              refX: 7,
+              refY: 4,
+              markerWidth: 6,
+              markerHeight: 6,
+              orient: 'auto'
+            },
+            defs
+          )
+          el('path', { d: 'M0,0L8,4L0,8z', fill: COLORS[k] }, m)
+        }
+        for (let i = 0; i < NL; i++) {
+          el(
+            'rect',
+            {
+              x: 0,
+              y: laneY(i),
+              width: W + PAD_R,
+              height: ROW,
+              class: 'lanebg' + (i === 0 ? ' coord' : i % 2 ? ' alt' : '')
+            },
+            svg
+          )
+          el(
+            'line',
+            { x1: 0, y1: laneY(i) + ROW, x2: W + PAD_R, y2: laneY(i) + ROW, class: 'lanesep' },
+            svg
+          )
+        }
+        const span = t1 - t0,
+          steps = [60e3, 5 * 60e3, 15 * 60e3, 30 * 60e3, 3600e3, 2 * 3600e3, 4 * 3600e3]
+        let step = steps.find((s) => span / s <= 10) || 4 * 3600e3
+        const ax = el('g', { class: 'axis' }, svg)
+        for (let t = Math.ceil(t0 / step) * step; t <= t1; t += step) {
+          const xx = x(t)
+          el('line', { x1: xx, y1: AXIS, x2: xx, y2: H(), stroke: '#2c313a' }, ax)
+          const tx = el('text', { x: xx + 3, y: AXIS - 8 }, ax)
+          tx.textContent = fmtT(t)
+        }
+        el(
+          'rect',
+          {
+            x: x(FULL[0]),
+            y: laneC(0) - 3,
+            width: Math.max(2, x(FULL[1]) - x(FULL[0])),
+            height: 6,
+            rx: 3,
+            fill: '#56b6c2',
+            opacity: 0.35
+          },
+          svg
+        )
+        const showConn = document.getElementById('tgConn').checked,
+          showSupp = document.getElementById('tgSupp').checked,
+          showInstr = document.getElementById('tgInstr').checked
+        if (showConn)
+          for (const c of conn) {
+            if (c.at < t0 || c.at > t1) continue
+            const xx = x(c.at)
+            if (c.kind === 'supplement' || c.kind === 'stop' || c.kind === 'instr') {
+              if (c.kind === 'instr' && !showInstr) continue
+              if (c.kind !== 'instr' && !showSupp) continue
+              const by = laneY(c.to) + 8
+              const p = el(
+                'path',
+                {
+                  d:
+                    'M' +
+                    (xx - 4) +
+                    ',' +
+                    (by - 6) +
+                    'L' +
+                    (xx + 4) +
+                    ',' +
+                    (by - 6) +
+                    'L' +
+                    xx +
+                    ',' +
+                    by +
+                    'z',
+                  fill: COLORS[c.kind],
+                  class: 'tick',
+                  opacity: 0.9
+                },
+                svg
+              )
+              bindConn(p, c)
+              continue
+            }
+            const y1 = laneC(c.from),
+              y2 = laneC(c.to)
+            let d
+            if (c.from === 0)
+              d =
+                'M' +
+                xx +
+                ',' +
+                (y1 + 8) +
+                ' C' +
+                (xx - 14) +
+                ',' +
+                (y1 + 8 + (y2 - y1) * 0.3) +
+                ' ' +
+                (xx - 14) +
+                ',' +
+                (y2 - (y2 - y1) * 0.3) +
+                ' ' +
+                xx +
+                ',' +
+                (y2 - 12)
+            else if (c.to === 0)
+              d =
+                'M' +
+                xx +
+                ',' +
+                (y1 - 12) +
+                ' C' +
+                (xx + 14) +
+                ',' +
+                (y1 - 12 - (y1 - y2) * 0.3) +
+                ' ' +
+                (xx + 14) +
+                ',' +
+                (y2 + (y1 - y2) * 0.3) +
+                ' ' +
+                xx +
+                ',' +
+                (y2 + 10)
+            else {
+              const dir = c.to > c.from ? 1 : -1
+              d =
+                'M' +
+                xx +
+                ',' +
+                (y1 + dir * 10) +
+                ' C' +
+                (xx + 22) +
+                ',' +
+                (y1 + dir * (Math.abs(y2 - y1) * 0.3)) +
+                ' ' +
+                (xx + 22) +
+                ',' +
+                (y2 - dir * (Math.abs(y2 - y1) * 0.3)) +
+                ' ' +
+                xx +
+                ',' +
+                (y2 - dir * 12)
+            }
+            const p = el(
+              'path',
+              {
+                d,
+                fill: 'none',
+                stroke: COLORS[c.kind],
+                'stroke-width': 1.2,
+                opacity: 0.75,
+                'marker-end': 'url(#ar-' + c.kind + ')',
+                class: 'conn'
+              },
+              svg
+            )
+            if (c.kind === 'question_lat') p.setAttribute('stroke-dasharray', '3 3')
+            bindConn(p, c)
+            const hit = el(
+              'path',
+              { d, fill: 'none', stroke: 'transparent', 'stroke-width': 11, class: 'conn' },
+              svg
+            )
+            bindConn(hit, c)
+          }
+        for (const b of bars) {
+          if (b.end < t0 || b.start > t1) continue
+          const bx = x(b.start),
+            bw = Math.max(3, x(b.end) - bx),
+            by = laneY(b.lane) + 12
+          const g = el('g', { class: 'bar' }, svg)
+          el(
+            'rect',
+            {
+              x: bx,
+              y: by,
+              width: bw,
+              height: 18,
+              rx: 3,
+              fill: BARCOL[b.status] || '#61afef',
+              opacity: b.failed ? 0.9 : 0.75
+            },
+            g
+          )
+          if (bw > 56) {
+            const tx = el(
+              'text',
+              { x: bx + 5, y: by + 12.5, fill: '#282c34', 'font-size': 10, 'font-weight': 600 },
+              g
+            )
+            tx.textContent =
+              b.shortTitle.length > Math.floor(bw / 10)
+                ? b.shortTitle.slice(0, Math.floor(bw / 10) - 1) + '…'
+                : b.shortTitle
+            tx.style.pointerEvents = 'none'
+          }
+          bindBar(g, b)
+        }
+        for (const w of waits) {
+          if (w.end < t0 || w.start > t1) continue
+          const bx = x(w.start),
+            bw = Math.max(2, x(w.end) - bx),
+            by = laneY(w.lane) + 12
+          const r = el(
+            'rect',
+            {
+              x: bx,
+              y: by,
+              width: bw,
+              height: 18,
+              rx: 3,
+              fill: 'url(#hatch)',
+              stroke: '#e5c07b',
+              'stroke-width': 0.8,
+              class: 'bar'
+            },
+            svg
+          )
+          bindWait(r, w)
+        }
+        const ch = el('g', { style: 'pointer-events:none' }, svg)
+        el(
+          'line',
+          {
+            id: 'chline',
+            y1: AXIS,
+            y2: H(),
+            stroke: '#5c6370',
+            'stroke-dasharray': '2 3',
+            opacity: 0
+          },
+          ch
+        )
+        el('text', { id: 'chtext', y: AXIS - 8, fill: '#d7dae0', 'font-size': 10, opacity: 0 }, ch)
+      }
+
+      function bindBar(g, b) {
+        g.addEventListener('click', (e) => {
+          e.stopPropagation()
+          showBar(b)
+        })
+        g.addEventListener('mousemove', (e) =>
+          showTip(
+            e,
+            '<b>' +
+              esc(b.shortTitle) +
+              '</b><div class="t">' +
+              esc(b.label) +
+              ' · ' +
+              esc(b.status) +
+              ' · ' +
+              fmtT(b.start) +
+              '–' +
+              fmtT(b.end) +
+              ' · ' +
+              fmtDur(b.end - b.start) +
+              '</div>'
+          )
+        )
+        g.addEventListener('mouseleave', hideTip)
+      }
+      function bindWait(r, w) {
+        r.addEventListener('click', (e) => {
+          e.stopPropagation()
+          showWait(w)
+        })
+        r.addEventListener('mousemove', (e) =>
+          showTip(
+            e,
+            '<b>阻塞等回复（推断）</b><div class="t">' +
+              fmtT(w.start) +
+              '–' +
+              fmtT(w.end) +
+              ' · ' +
+              fmtDur(w.end - w.start) +
+              ' · ' +
+              (w.resolved ? '已收到回复' : '未等到回复') +
+              '</div>'
+          )
+        )
+        r.addEventListener('mouseleave', hideTip)
+      }
+      function bindConn(p, c) {
+        p.addEventListener('click', (e) => {
+          e.stopPropagation()
+          showConn(c)
+        })
+        p.addEventListener('mousemove', (e) =>
+          showTip(
+            e,
+            '<b>' +
+              KIND_ZH[c.kind] +
+              '</b><div class="t">' +
+              fmtT(c.at) +
+              ' · ' +
+              esc((c.subject || '').slice(0, 60)) +
+              '</div>'
+          )
+        )
+        p.addEventListener('mouseleave', hideTip)
+      }
+      function showTip(e, html) {
+        tip.innerHTML = html
+        tip.style.display = 'block'
+        tip.style.left = Math.min(e.clientX + 14, window.innerWidth - 360) + 'px'
+        tip.style.top = e.clientY + 14 + 'px'
+      }
+      function hideTip() {
+        tip.style.display = 'none'
+      }
+
+      function showBar(b) {
+        const d = details[b.id] || {}
+        const sess = d.session
+        let html =
+          '<h3>' +
+          esc(b.shortTitle) +
+          ' <span class="badge">' +
+          esc(b.status) +
+          '</span></h3>' +
+          '<div class="row"><span class="k">时间</span><span class="v">' +
+          fmtT(b.start) +
+          '–' +
+          fmtT(b.end) +
+          ' · ' +
+          fmtDur(b.end - b.start) +
+          ' · ' +
+          esc(b.label) +
+          '</span></div>' +
+          (d.goal
+            ? '<div class="row"><span class="k">目标</span><span class="v">' +
+              esc(d.goal) +
+              '</span></div>'
+            : '') +
+          '<div class="row"><span class="k">输入</span><span class="v">' +
+          esc(d.inputSummary || d.input || '—') +
+          '</span></div>' +
+          (d.input
+            ? '<details><summary>完整输入</summary><pre>' + esc(d.input) + '</pre></details>'
+            : '') +
+          '<div class="row"><span class="k">输出</span><span class="v">' +
+          esc(d.outputSummary || d.output || '—') +
+          '</span></div>' +
+          (d.output
+            ? '<details><summary>完整输出</summary><pre>' + esc(d.output) + '</pre></details>'
+            : '')
+        if (sess && sess.terminalId)
+          html +=
+            '<div class="row"><span class="k">会话</span><span class="v">' +
+            esc(sess.agent || '') +
+            ' · ' +
+            esc(sess.status) +
+            ' <button id="jump">跳转到会话</button></span></div>'
+        detail.innerHTML = html
+        const j = document.getElementById('jump')
+        if (j)
+          j.onclick = async () => {
+            try {
+              const r = await orca.plugin.request('trace.session.open', { session: sess })
+              j.textContent = r.opened ? '已跳转' : r.reason || '不可打开'
+            } catch (e) {
+              j.textContent = '跳转失败'
+            }
+          }
+      }
+      function showWait(w) {
+        const m = msgMap[w.msgId] || {}
+        detail.innerHTML =
+          '<h3>阻塞等待段（推断） <span class="badge">' +
+          (w.resolved ? '已回复' : '未回复') +
+          '</span></h3><div class="row"><span class="k">区间</span><span class="v">' +
+          fmtT(w.start) +
+          '–' +
+          fmtT(w.end) +
+          ' · ' +
+          fmtDur(w.end - w.start) +
+          '</span></div><div class="row"><span class="k">起因</span><span class="v">' +
+          esc(m.type) +
+          ' · ' +
+          esc(m.subject) +
+          '</span></div><div class="row"><span class="k">说明</span><span class="v">Orca 未显式记录同步/异步；此段按「发出提问/求助 → 收到下一条回复或指令」推断。</span></div>'
+      }
+      function showConn(c) {
+        const m = c.msgId ? msgMap[c.msgId] : null
+        const from = lanes[c.from]?.name || '?',
+          to = lanes[c.to]?.name || '?'
+        let html =
+          '<h3>' +
+          KIND_ZH[c.kind] +
+          ' <span class="badge">' +
+          fmtT(c.at) +
+          '</span></h3><div class="row"><span class="k">路径</span><span class="v">' +
+          esc(from) +
+          ' → ' +
+          esc(to) +
+          '</span></div><div class="row"><span class="k">摘要</span><span class="v">' +
+          esc(c.subject || '—') +
+          '</span></div>'
+        if (m)
+          html +=
+            '<div class="row"><span class="k">类型</span><span class="v">' +
+            esc(m.type) +
+            (m.fromAgent ? ' · ' + esc(m.fromAgent) : '') +
+            '</span></div>' +
+            (m.body
+              ? '<details><summary>消息正文</summary><pre>' + esc(m.body) + '</pre></details>'
+              : '')
+        if (c.kind === 'dispatch' && c.dispatchId) {
+          const d = details[c.dispatchId] || {}
+          html +=
+            '<div class="row"><span class="k">输入</span><span class="v">' +
+            esc(d.inputSummary || d.input || '—') +
+            '</span></div>'
+        }
+        detail.innerHTML = html
+      }
+
+      let drag = null
+      scroll.addEventListener(
+        'wheel',
+        (e) => {
+          e.preventDefault()
+          const rect = scroll.getBoundingClientRect()
+          const frac = Math.min(1, Math.max(0, (e.clientX - rect.left) / W))
+          const anchor = t0 + frac * (t1 - t0)
+          const f = e.deltaY > 0 ? 1.25 : 0.8
+          let span = Math.min(FULL[1] - FULL[0], Math.max(30e3, (t1 - t0) * f))
+          t0 = anchor - frac * span
+          t1 = t0 + span
+          if (t0 < FULL[0]) {
+            t1 += FULL[0] - t0
+            t0 = FULL[0]
+          }
+          if (t1 > FULL[1]) {
+            t0 -= t1 - FULL[1]
+            t1 = FULL[1]
+          }
+          render()
+        },
+        { passive: false }
+      )
+      scroll.addEventListener('mousedown', (e) => {
+        drag = { x: e.clientX, t0, t1, moved: false }
+      })
+      window.addEventListener('mousemove', (e) => {
+        if (drag) {
+          if (!drag.moved && Math.abs(e.clientX - drag.x) < 3) return
+          drag.moved = true
+          scroll.style.cursor = 'grabbing'
+          const dt = ((drag.x - e.clientX) / W) * (drag.t1 - drag.t0)
+          let a = drag.t0 + dt,
+            b = drag.t1 + dt
+          if (a < FULL[0]) {
+            b += FULL[0] - a
+            a = FULL[0]
+          }
+          if (b > FULL[1]) {
+            a -= b - FULL[1]
+            b = FULL[1]
+          }
+          t0 = a
+          t1 = b
+          render()
+          return
+        }
+        const rect = scroll.getBoundingClientRect()
+        if (
+          e.clientX >= rect.left &&
+          e.clientX <= rect.right &&
+          e.clientY >= rect.top &&
+          e.clientY <= rect.bottom
+        ) {
+          const xx = e.clientX - rect.left
+          if (xx <= W) {
+            const t = t0 + (xx / W) * (t1 - t0)
+            const line = document.getElementById('chline'),
+              tx = document.getElementById('chtext')
+            if (line) {
+              line.setAttribute('x1', xx)
+              line.setAttribute('x2', xx)
+              line.setAttribute('opacity', 1)
+              tx.setAttribute('x', xx + 4)
+              tx.setAttribute('opacity', 1)
+              tx.textContent = fmtT(t) + ' · ∥' + activeAt(t)
+            }
+          }
+        }
+      })
+      window.addEventListener('mouseup', () => {
+        drag = null
+        scroll.style.cursor = 'crosshair'
+      })
+      scroll.addEventListener('dblclick', () => {
+        t0 = FULL[0]
+        t1 = FULL[1]
+        render()
+      })
+      document.getElementById('reset').onclick = () => {
+        t0 = FULL[0]
+        t1 = FULL[1]
+        render()
+      }
+      for (const id of ['tgSupp', 'tgInstr', 'tgConn'])
+        document.getElementById(id).onchange = render
+      window.addEventListener('resize', () => {
+        if (view === 'office') {
+          if (window.OfficeView) OfficeView.resize()
+        } else if (view === 'team') renderTeam()
+        else render()
+      })
+
+      function showError(e, ctx) {
+        detail.innerHTML =
+          '<span style="color:var(--red)">' +
+          esc(ctx || '') +
+          ' ' +
+          esc(e?.message || e) +
+          '</span>'
+      }
+      let loadGeneration = 0
+      function applyRunAnswer(answer, summary) {
+        processData(answer)
+        buildLabels()
+        window.TraceRedesign?.setData(answer, summary)
+        if (window.OfficeView) {
+          if (summary) OfficeView.live(answer, summary)
+          else OfficeView.mount(answer)
+        }
+        if (view === 'team') renderTeam()
+        else if (view === 'timeline') render()
+        document.getElementById('title').textContent = 'Orca Trace · ' + answer.run.shortTitle
+        const nDone = conn.filter((c) => c.kind === 'worker_done').length,
+          nHand = conn.filter((c) => c.kind === 'handoff').length,
+          nEsc = conn.filter((c) => c.kind === 'escalation').length
+        document.getElementById('stats').innerHTML =
+          '<b>' +
+          fmtDur(FULL[1] - FULL[0]) +
+          '</b> · ' +
+          (lanes.length - 1) +
+          ' worker · ' +
+          bars.length +
+          ' 派发 · ' +
+          nDone +
+          ' 回报 · ' +
+          nHand +
+          ' 交接 · ' +
+          nEsc +
+          ' 求助 · 峰值并发 <b>∥' +
+          maxC +
+          '</b>'
+        document.getElementById('maxc').textContent = '∥' + maxC
+        document.getElementById('foot').textContent =
+          '只读 ' +
+          answer.db +
+          ' · run ' +
+          answer.run.id +
+          ' · ' +
+          answer.nodes.length +
+          ' 节点 / ' +
+          answer.messages.length +
+          ' 消息。等待段与「补充/停止」分类为推断。'
+      }
+      async function loadRun(id) {
+        const generation = ++loadGeneration
+        if (!id) return
+        try {
+          const answer = await orca.plugin.request('trace.load', { runId: id })
+          if (generation !== loadGeneration || runSelect.value !== id) return
+          if (!answer || typeof answer !== 'object' || answer.run?.id !== id)
+            throw new Error('trace.load 未返回有效数据')
+          for (const key of ['nodes', 'messages', 'calls'])
+            if (answer[key] != null && !Array.isArray(answer[key]))
+              throw new Error('trace.load 的 ' + key + ' 不是数组')
+          applyRunAnswer(answer)
+        } catch (e) {
+          if (generation === loadGeneration) {
+            showError(e, '加载 run 失败：')
+            if (window.OfficeView) OfficeView.fail('加载 Run 失败 / unknown')
+            window.TraceRedesign?.fail()
+          }
+        }
+      }
+      async function init() {
+        try {
+          const { runs } = await orca.plugin.request('trace.runs')
+          const previous = runSelect.value
+          runSelect.innerHTML = runs
+            .map(
+              (r) =>
+                '<option value="' +
+                esc(r.id) +
+                '">' +
+                esc((r.objective || r.id).slice(0, 48)) +
+                '</option>'
+            )
+            .join('')
+          const richest = runs.reduce((b, r) => (r.nodes > b.nodes ? r : b), runs[0])
+          const pick = runs.find((r) => r.id === previous) || richest
+          if (!pick) return
+          runSelect.value = pick.id
+          if (window.OfficeLive) OfficeLive.changed()
+          await loadRun(pick.id)
+        } catch (e) {
+          showError(e, '读取 runs 失败：')
+          window.TraceRedesign?.fail()
+        }
+      }
+      runSelect.onchange = () => {
+        loadGeneration++
+        if (window.OfficeLive) OfficeLive.changed()
+        loadRun(runSelect.value)
+      }
+      document.getElementById('refresh').onclick = init
+
+      /* ---- live mode: poll orchestration.db for runs that are running right now ---- */
+      let liveOn = false
+      function liveTag(t, col) {
+        const el = document.getElementById('oLiveTag')
+        el.textContent = t
+        el.style.color = col || 'var(--muted)'
+      }
+      window.OfficeLive = OfficeView.createLiveController({
+        request: (name, data) => orca.plugin.request(name, data),
+        selectedRun: () => runSelect.value,
+        followActive: () => document.getElementById('oFollow').checked,
+        selectRun(id, title) {
+          if (!Array.from(runSelect.options).some((option) => option.value === id)) {
+            const option = document.createElement('option')
+            option.value = id
+            option.textContent = (title || id).slice(0, 48)
+            runSelect.append(option)
+          }
+          if (runSelect.value !== id) {
+            loadGeneration++
+            runSelect.value = id
+          }
+        },
+        onData(answer, summary) {
+          if (answer) applyRunAnswer(answer, summary)
+          else OfficeView.live(null, summary)
+          liveTag(
+            '实时 · active ' +
+              summary.active +
+              ' · ' +
+              new Date().toLocaleTimeString('zh-CN', { hour12: false }),
+            'var(--green)'
+          )
+        },
+        onError(e) {
+          OfficeView.fail('宿主实时读取失败 / unknown')
+          window.TraceRedesign?.fail()
+          liveTag('读取失败 / unknown：' + ((e && e.message) || e), 'var(--red)')
+        }
+      })
+      document.getElementById('oFollow').onchange = () => {
+        if (liveOn) OfficeView.fail('等待所选模式刷新')
+        OfficeLive.changed()
+      }
+      document.getElementById('oLive').onclick = () => {
+        liveOn = !liveOn
+        const b = document.getElementById('oLive')
+        b.classList.toggle('on', liveOn)
+        b.style.background = liveOn ? 'var(--green)' : ''
+        b.style.color = liveOn ? '#282c34' : ''
+        b.style.fontWeight = liveOn ? '600' : ''
+        if (window.OfficeView) OfficeView.setLive(liveOn)
+        loadGeneration++
+        OfficeLive.setEnabled(liveOn)
+        if (liveOn) liveTag('正在读取当前 Run…')
+        else {
+          liveTag('真实历史回放')
+          loadRun(runSelect.value)
+        }
+      }
+      window.traceRedesignAccept = applyRunAnswer
+      window.traceRedesignSelect = async (id) => {
+        runSelect.value = id
+        await loadRun(id)
+      }
+      window.traceRedesignCurrent = () =>
+        D ? { data: D, capturedAt: new Date().toISOString() } : null
+      init()
+    </script>
+  </body>
+</html>

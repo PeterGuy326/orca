@@ -1,0 +1,35 @@
+.office-floor .live-dot {
+  background: var(--orange);
+}
+.office-floor .scene-caption {
+  color: var(--green-dark);
+}
+
+/* Twenty-four people in the selector: tighter rows so the list stays scannable. */
+.office-floor .people {
+  gap: 5px;
+}
+.office-floor .person {
+  min-height: 46px;
+  padding: 5px 4px;
+}
+.office-floor .avatar {
+  transform: scale(0.64);
+}
+.office-floor .person b {
+  font-size: 10px;
+}
+.office-floor .person small {
+  font-size: 7px;
+}
+
+@media (max-width: 900px) {
+  .office-floor .person {
+    min-height: 42px;
+  }
+}
+@media (max-width: 560px) {
+  .office-floor .people {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

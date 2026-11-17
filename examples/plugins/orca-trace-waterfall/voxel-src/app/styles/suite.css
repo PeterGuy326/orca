@@ -1,0 +1,7 @@
+/* Scene-specific accents; navigation is shared by every website page. */
+.office-suite .live-dot {
+  background: var(--green);
+}
+.office-suite .scene-caption {
+  color: var(--green-dark);
+}
