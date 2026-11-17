@@ -1,9 +1,14 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { sanitize, openSession, sessionFor, createTracePager, traceReply } from '../src/worker.ts'
+import activate, {
+  sanitize,
+  openSession,
+  sessionFor,
+  createTracePager,
+  traceReply
+} from '../src/worker.ts'
 import { parseTraceRecord } from '../src/trace-record.ts'
 import { loadTrace } from '../voxel-src/integrations/tasks/trace-read.js'
-import activate from '../src/worker.ts'
 
 test('malformed records and unknown worker errors expose no original content', async () => {
   for (const text of ['api_key=synthetic-private-value', '{"password":"synthetic-private-value"']) {
