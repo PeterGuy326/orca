@@ -420,6 +420,14 @@ export function createScene({
     resizeObserver.observe(viewport)
     resize()
     const raycaster = new THREE.Raycaster()
+    const nameTags = managedActors ? actors.map((actor, index) => {
+      const button = document.createElement('button')
+      button.style.cssText = 'position:absolute;transform:translate(-50%,-100%);font-size:10px;z-index:2'
+      listen(button, 'click', () => select(index))
+      viewport.append(button)
+      lifetime.add(() => button.remove())
+      return button
+    }) : []
     let pointerStart = null
     listen(renderer.domElement, 'pointerdown', (e) => {
       pointerStart = { x: e.clientX, y: e.clientY }
@@ -758,6 +766,13 @@ export function createScene({
         }
       }
       controls.update()
+      nameTags.forEach((button,index) => {
+        const actor=actors[index], p=actor.root.position.clone();p.y=2.2;p.project(camera)
+        button.hidden=!actor.root.visible || Math.abs(p.x)>1 || Math.abs(p.y)>1
+        button.textContent=actor.config.name
+        button.style.left=((p.x+1)/2*width)+'px'
+        button.style.top=((-p.y+1)/2*height)+'px'
+      })
       if (bubbleText) {
         if (elapsed > bubbleUntil) {
           hideBubble()

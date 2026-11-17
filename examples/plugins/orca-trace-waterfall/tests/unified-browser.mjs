@@ -1,0 +1,40 @@
+import {chromium} from '@playwright/test'
+import {readFile,mkdir,writeFile} from 'node:fs/promises'
+import http from 'node:http'
+import path from 'node:path'
+import assert from 'node:assert/strict'
+import {execFile} from 'node:child_process'
+import {promisify} from 'node:util'
+const root=path.resolve(import.meta.dirname,'..'),out=process.env.OFFICE_PLUGIN_EVIDENCE
+assert.ok(out);await mkdir(out,{recursive:true})
+const exec=promisify(execFile),live=process.env.OFFICE_PLUGIN_LIVE==='1'
+const server=http.createServer(async(req,res)=>{try{const u=new URL(req.url,'http://localhost');if(u.pathname==='/rpc'){const args=['plugin','dev','request','local.orca-trace-waterfall',u.searchParams.get('n')];if(u.searchParams.get('d')!=='undefined')args.push('--data',u.searchParams.get('d'));args.push('--json');const a=JSON.parse((await exec('orca',args)).stdout);if(!a.ok)throw Error(a.error.message);res.end(JSON.stringify(a.result.result));return}const f=path.resolve(root,'.'+u.pathname);if(!f.startsWith(root+'/'))throw Error();res.setHeader('Content-Type',f.endsWith('.js')?'text/javascript':f.endsWith('.css')?'text/css':'text/html');res.end(await readFile(f))}catch(e){res.writeHead(500).end(e.message)}})
+await new Promise(r=>server.listen(0,'127.0.0.1',r))
+const browser=await chromium.launch({headless:true,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']})
+const page=await browser.newPage({viewport:{width:904,height:990}}),errors=[]
+page.on('pageerror',e=>errors.push(e.message))
+await page.addInitScript(({live})=>{window.mode='normal';window.orca={plugin:{async request(n,d){if(live)return (await fetch('/rpc?n='+n+'&d='+encodeURIComponent(JSON.stringify(d)))).json();if(window.mode==='fail')throw Error('synthetic');if(n==='trace.live')return {runs:window.mode==='empty'?[]:[{id:'A',active:1},{id:'B',active:1}]};if(n==='trace.runs')return {runs:[{id:'H',objective:'history'}]};const id=d.runId,t=Date.now()-120000;return {run:{id,objective:id},nodes:[{id,kind:'run',start:t},{id:'t',kind:'task',parentId:id,label:id+' task',start:t,status:'dispatched'},{id:'d',kind:'dispatch',parentId:'t',taskId:'t',start:t,terminalId:'same',status:'running',input:id+' ONLY',session:{name:'工程师',status:'active'}}],messages:[{id:'m',dispatchId:'d',body:id+' message',type:'status',at:t}]}}}}},{live})
+try{
+ await page.goto('http://127.0.0.1:'+server.address().port+'/panel/index.html');await page.waitForFunction(()=>window.TraceRedesign?.getState().ready,null,{timeout:60000})
+ const state=await page.evaluate(()=>window.TraceRedesign.getState())
+ const pose=()=>page.evaluate(()=>window.TraceRedesign.getState().office.engine.cameraPose)
+ const before=await pose();await page.locator('canvas').hover();await page.mouse.wheel(120,30);await page.waitForTimeout(80);const pan=await pose();assert.equal(pan.zoom,before.zoom);assert.notDeepEqual(pan.target,before.target)
+ await page.mouse.wheel(0,120);await page.waitForTimeout(80);assert.ok((await pose()).zoom<pan.zoom)
+ assert.equal(await page.locator('#run').isVisible(),false)
+ if(!live){assert.equal(state.people.length,1);assert.equal(state.people[0].tasks.length,2)}
+ await page.locator('#view-office summary').click();await page.locator('.person-row').first().click()
+ if(!live){assert.ok((await page.locator('#drawer').textContent()).includes('A message'));assert.ok((await page.locator('#drawer').textContent()).includes('B message'))}
+ await page.locator('[data-flow]').first().click();const flow=await page.evaluate(()=>window.TraceTimeline.getState());if(!live)assert.equal(flow.runId,'A')
+ await page.locator('#back').click();assert.equal(await page.locator('#drawer').isVisible(),false)
+ await page.screenshot({path:out+'/904.png'});await page.setViewportSize({width:420,height:990});await page.screenshot({path:out+'/420.png'});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth))
+ if(!live){await page.evaluate(()=>window.mode='fail');await page.locator('#refresh').click();await page.waitForFunction(()=>window.TraceRedesign.getState().error);assert.ok((await page.evaluate(()=>window.TraceRedesign.getState())).office.bindings.every(p=>p.action==='idle'));await page.evaluate(()=>window.mode='empty');await page.locator('#refresh').click();await page.waitForFunction(()=>window.TraceRedesign.getState().people.length===0)}
+ if(!live){
+   await page.evaluate(()=>{window.mode='normal';const read=window.orca.plugin.request;window.orca.plugin.request=async(n,d)=>{const a=await read(n,d);if(n==='trace.load')for(let i=1;i<10;i++)a.nodes.push({...a.nodes[2],id:'d'+i,terminalId:'s'+i});return a}})
+   await page.locator('#refresh').click()
+   await page.waitForFunction(()=>window.TraceRedesign.getState().people.length===10)
+   await page.locator('#office-next').click()
+   assert.equal(await page.evaluate(()=>window.TraceRedesign.getState().office.page),1)
+ }
+ assert.deepEqual(errors,[]);await writeFile(out+'/result.json',JSON.stringify({live,people:state.people,flow,errors,wheel:'horizontal-dominant pan and vertical zoom',overflow:!live},null,2))
+ console.log({live,people:state.people.length,errors})
+}finally{await browser.close();server.closeAllConnections();server.close()}

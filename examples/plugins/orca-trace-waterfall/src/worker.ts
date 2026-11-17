@@ -364,7 +364,7 @@ async function liveRuns(db: string): Promise<LiveRun[]> {
          or (w.state is null and d.status in ('pending','dispatched'))
       group by d.run_id
       order by active desc, last_at desc
-      limit 20`
+      `
   )
   const out: LiveRun[] = []
   for (const row of rows) {

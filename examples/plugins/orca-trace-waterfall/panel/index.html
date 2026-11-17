@@ -919,6 +919,7 @@
       body > header { flex-wrap:nowrap; }
       body > header .seg { order:0; }
       #run { order:1; flex:1; min-width:0; max-width:none; }
+      #current-title { max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
       body > header .toggles { display:none !important; }
       #wrap { display:none; min-height:200px; }
       #legend { display:none; }
@@ -949,7 +950,8 @@
   <body>
     <header>
       <h1 id="title" hidden>Trace Waterfall</h1>
-      <select id="run" aria-label="选择协作" title="选择协作"></select>
+      <span id="current-title">当前协作</span><button id="back">返回</button><button id="history">历史</button>
+      <select id="run" hidden></select>
       <button id="refresh" hidden>重试读取</button>
       <div class="seg">
         <button id="vOffice" class="on">办公室</button><button id="vTime">瀑布图</button><button id="vTeam" hidden>团队</button>
@@ -1430,7 +1432,7 @@
         for (const L of lanes) {
           const div = document.createElement('div')
           div.className = 'lane-label' + (L.idx === 0 ? ' coord' : '')
-          const chars = [...L.name]
+          const chars = [...(L.name || '未命名')]
           const disp = chars.length > 12 ? chars.slice(0, 11).join('') + '…' : L.name
           div.title =
             (L.full || L.name) + (L.worktree ? '\n工作区 ' + L.worktree : '') + '\n' + L.terminal
@@ -1902,9 +1904,9 @@
               g
             )
             tx.textContent =
-              b.shortTitle.length > Math.floor(bw / 10)
+              (b.shortTitle || '').length > Math.floor(bw / 10)
                 ? b.shortTitle.slice(0, Math.floor(bw / 10) - 1) + '…'
-                : b.shortTitle
+                : b.shortTitle || b.label || ''
             tx.style.pointerEvents = 'none'
           }
           bindBar(g, b)

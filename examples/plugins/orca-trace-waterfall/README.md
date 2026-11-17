@@ -1,6 +1,6 @@
 # Live Office Voxel and Trace Waterfall
 
-The panel opens in Office Voxel. Office and the Network-style waterfall share one selected orchestration Run, read through the existing host trace.live and trace.load handlers. Polling waits for each request chain to finish before scheduling the next read.
+The panel opens one Office Voxel for the current native Orca dispatches. It reads every active Run serially, deduplicates people by terminal ID, and keeps task/message models separate. The waterfall shows the Run chosen from a person's tasks; history is loaded on demand. It does not cover external agents or all terminals. Each poll finishes before scheduling the next; full reads are cached for 15 seconds.
 
 `trace.load` returns the original object for small runs. Above 512 KiB it returns a `paged` envelope with `runId`, `snapshotId`, `offset`, `total`, `chunk` and `nextOffset`. Continue with the same Run/token and next offset until null; `loadTrace` assembles and validates the complete JSON before applying it. Each token holds one sanitized, immutable read for two minutes (four concurrent reads retained); polling starts a fresh read. Nodes, messages, bodies and relationships are never omitted. An expired or mismatched token fails the read; it never mixes versions. Generation changes stop subsequent chunks and discard late results. The legacy server uses the same helper. This is transport segmentation, not a stored fallback.
 
