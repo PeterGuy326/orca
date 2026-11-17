@@ -1,5 +1,7 @@
 import { build } from 'vite'
 import path from 'node:path'
+import { readFileSync } from 'node:fs'
+import { scopeThreeTypeLint } from './bundle-type-lint.mjs'
 
 const root = import.meta.dirname
 const scope = () => ({
@@ -22,7 +24,13 @@ await build({
       generateBundle(_options, bundle) {
         const output = bundle['redesign.js']
         if (output?.type === 'chunk') {
-          output.code = `/* oxlint-disable typescript/switch-exhaustiveness-check, typescript/restrict-template-expressions -- Generated bundle includes untyped third-party Three.js; source remains checked. */\n${output.code}`
+          const version = JSON.parse(
+            readFileSync(path.join(root, 'node_modules/three/package.json'), 'utf8')
+          ).version
+          output.code = scopeThreeTypeLint(output, version).code
+          // The verified map describes pre-annotation bytes and must not be shipped as a runtime map.
+          delete bundle['redesign.js.map']
+          output.map = null
         }
       }
     }
@@ -32,6 +40,7 @@ await build({
     outDir: 'dist',
     emptyOutDir: false,
     cssCodeSplit: false,
+    sourcemap: 'hidden',
     rolldownOptions: {
       input: path.join(root, 'redesign/src/main.js'),
       output: {

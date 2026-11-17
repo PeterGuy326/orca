@@ -18,18 +18,9 @@ jobs:
         with:
           native-runtime: node
           node-version: '24'
-      - name: Capture frozen original diagnostics
+      - name: Validate local statement exemptions and business canary
         shell: bash
         run: |
-          git show 654e1848b360606533fa9ea1456306ccd4067d49:examples/plugins/orca-trace-waterfall/dist/redesign.js > examples/plugins/orca-trace-waterfall/dist/redesign.js
-          mkdir office-type-diagnostic
           node node_modules/oxlint/bin/oxlint --version
           node -p 'require("oxlint-tsgolint/package.json").version'
-          node node_modules/oxlint/bin/oxlint --type-aware --config config/oxlint-code-quality-type-aware.json --format json examples/plugins/orca-trace-waterfall/dist/redesign.js > office-type-diagnostic/original.json
-      - uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: office-type-diagnostic
-          path: office-type-diagnostic/original.json
-          retention-days: 1
-          if-no-files-found: error
+          node examples/plugins/orca-trace-waterfall/tests/bundle-type-lint.mjs "$GITHUB_WORKSPACE"
