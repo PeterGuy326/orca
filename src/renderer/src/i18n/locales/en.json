@@ -20714,11 +20714,6 @@
     }
   },
   "components": {
-    "qwenWork": {
-      "openDesktop": "Open QwenWork",
-      "openFailed": "Could not open QwenWork.",
-      "searchNames": "QwenWork 千问办公 千問辦公"
-    },
     "onboarding": {
       "flow": {
         "stepTooltip": {
@@ -21517,10 +21512,7 @@
       "stop": "Stop the agent",
       "copyMessage": {
         "copied": "Copied",
-        "copy": "Copy message",
-        "copyFailed": "Could not copy message",
-        "openQwenWork": "Copy and open QwenWork",
-        "qwenWorkOpenFailed": "Message copied. Could not open QwenWork."
+        "copy": "Copy message"
       },
       "scrollMessageToTop": "Scroll this message to top",
       "loadingEarlier": "Loading…",

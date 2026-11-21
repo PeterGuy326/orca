@@ -72,7 +72,7 @@ function Strip({ tabs }: { tabs: TerminalTab[] }): React.JSX.Element {
   )
 }
 
-function searchFixture(count: number, query = 'cl', qwenWorkInstalled = false) {
+function searchFixture(count: number) {
   const fixtureTabs = tabs.slice(0, count)
   const unifiedTabs = fixtureTabs.map((tab, index) =>
     makeUnifiedTab({
@@ -109,20 +109,9 @@ function searchFixture(count: number, query = 'cl', qwenWorkInstalled = false) {
       unifiedTabsByWorktree: { [WORKSPACE_ID]: unifiedTabs }
     },
     render: () => <Strip tabs={fixtureTabs} />,
-    interact: async (frame) => {
-      const shell = window.api.shell
-      const original = shell.isQwenWorkAvailable
-      try {
-        shell.isQwenWorkAvailable = async () => qwenWorkInstalled
-        await openMenuAndSearch(frame, query)
-      } finally {
-        shell.isQwenWorkAvailable = original
-      }
-    }
+    interact: (frame) => openMenuAndSearch(frame, 'cl')
   })
 }
 
 export const activeTabOmitted = searchFixture(1)
 export const inactiveTabOffered = searchFixture(2)
-export const qwenWorkInstalled = searchFixture(1, '', true)
-export const qwenWorkSearch = searchFixture(1, '千问', true)

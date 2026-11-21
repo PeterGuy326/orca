@@ -19685,11 +19685,6 @@
     }
   },
   "components": {
-    "qwenWork": {
-      "openDesktop": "打开千问办公",
-      "openFailed": "未能打开千问办公。",
-      "searchNames": "千问办公 QwenWork 千問辦公"
-    },
     "native-chat": {
       "install": {
         "checking": "正在检查 {{agent}} 是否已在此主机上就绪…",
@@ -20174,10 +20169,7 @@
       "stop": "停止代理",
       "copyMessage": {
         "copied": "已复制",
-        "copy": "复制消息",
-        "copyFailed": "未能复制消息",
-        "openQwenWork": "复制并打开千问办公",
-        "qwenWorkOpenFailed": "消息已复制，但未能打开千问办公。"
+        "copy": "复制消息"
       },
       "scrollMessageToTop": "将此消息滚动到顶部",
       "loadingEarlier": "正在加载…",

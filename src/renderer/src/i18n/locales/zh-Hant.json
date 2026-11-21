@@ -18809,11 +18809,6 @@
     }
   },
   "components": {
-    "qwenWork": {
-      "openDesktop": "開啟千問辦公",
-      "openFailed": "無法開啟千問辦公。",
-      "searchNames": "千問辦公 QwenWork 千问办公"
-    },
     "onboarding": {
       "flow": {
         "stepTooltip": {
@@ -19444,10 +19439,7 @@
       "stop": "停止代理程式",
       "copyMessage": {
         "copied": "已複製",
-        "copy": "複製訊息",
-        "copyFailed": "無法複製訊息",
-        "openQwenWork": "複製並開啟千問辦公",
-        "qwenWorkOpenFailed": "訊息已複製，但無法開啟千問辦公。"
+        "copy": "複製訊息"
       },
       "scrollMessageToTop": "將此訊息捲動到頂端",
       "loadingEarlier": "正在載入…",
