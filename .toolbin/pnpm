@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /home/huyz/.nvm/versions/node/v24.11.1/bin/node /home/huyz/.cache/node/corepack/v1/pnpm/12.18.0/bin/pnpm.mjs "$@"
