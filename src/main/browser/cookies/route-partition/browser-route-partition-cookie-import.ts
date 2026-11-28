@@ -10,11 +10,8 @@ import {
   resolveBrowserImportSelection,
   selectBrowserProfile
 } from '../sources/browser-cookie-detection'
-import { importCookiesFromBrowser } from '../browser-cookie-import'
-import { importCookiesFromFile } from '../imports/import-cookie-file'
 import { importedBrowserProfileSource } from '../sources/browser-cookie-source-profiles'
 import { errorMessage } from '../../../../shared/errors/error-message'
-import { restoreBrowserRoutePartitionSessionCookies } from '../session-restore/browser-session-cookie-route-restore'
 import { withCookieImportSourceLock } from '../mutation/cookie-mutation-lock'
 import type { CookieImportOptions } from '../imports/cookie-import-contracts'
 
@@ -70,6 +67,8 @@ export async function importIntoRoutePartition(
       return destination.routeChanged(beforeRestore)
     }
     // Saved session cookies go back first, or the next page's restore would overwrite the import.
+    const { restoreBrowserRoutePartitionSessionCookies } =
+      await import('../session-restore/browser-session-cookie-route-restore')
     await restoreBrowserRoutePartitionSessionCookies(jar)
     const source = await resolveSource()
     if ('reason' in source) {
@@ -109,7 +108,12 @@ export async function browserCookieImportSource(
     return browser
   }
   return {
-    importInto: (partition) => importCookiesFromBrowser(browser, partition, options),
+    importInto: async (partition) =>
+      (await import('../browser-cookie-import')).importCookiesFromBrowser(
+        browser,
+        partition,
+        options
+      ),
     importedSource: () => importedBrowserProfileSource(browser)
   }
 }
@@ -122,7 +126,8 @@ export async function cookieFileImportSource(
     return { ok: false, reason: 'canceled' }
   }
   return {
-    importInto: (partition) => importCookiesFromFile(filePath, partition),
+    importInto: async (partition) =>
+      (await import('../imports/import-cookie-file')).importCookiesFromFile(filePath, partition),
     importedSource: () => ({ browserFamily: 'manual', importedAt: Date.now() })
   }
 }

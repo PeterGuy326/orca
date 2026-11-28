@@ -69,6 +69,7 @@ import {
 } from '../remote-runtime/orcad-lifecycle/orcad-peer-desktops-contract'
 import { OrcadTerminalCensusParamsSchema } from '../remote-runtime/orcad-lifecycle/orcad-terminal-census'
 import { DelegatedMobileDeviceSyncParamsSchema } from '../remote-runtime/pairing/delegated-mobile-device-contract'
+import { DelegatedPhoneServerOfferParamsSchema } from '../remote-runtime/pairing/delegated-phone-server-offer-contract'
 import { RegisterDeviceKeyParamsSchema } from '../remote-runtime/pairing/device-key-registration-contract'
 import { DeclareOrcaAccountParamsSchema } from '../remote-runtime/pairing/paired-desktop-account-contract'
 import { PairingCreateOfferParamsSchema } from '../remote-runtime/pairing/pairing-create-offer-contract'
@@ -103,11 +104,13 @@ import {
 import { PrepareCodexForWslPaneParams } from './accounts/agent-hooks-params'
 import {
   AntigravityAccountMutationParams,
+  AntigravityAccountSelectParams,
   AntigravityAccountTargetParams,
   AntigravityChatApiKeySaveParams,
   AntigravityChatSignInCompleteParams,
   AntigravityChatSignInFlowParams,
-  AntigravityChatSignInStartParams
+  AntigravityChatSignInStartParams,
+  AntigravityUnheldTerminalsParams
 } from './accounts/antigravity-accounts-params'
 import {
   UsageCredentialApiKeyParams,
@@ -361,6 +364,7 @@ import {
   PRBotAuthorOverrideUpdate,
   SettingsUpdate
 } from './client-ui/client-settings-params'
+import { UiSetWorkspaceNotificationMuted } from './client-ui/client-ui-notification-mute-params'
 import { FeatureInteractionIdParam, UiUpdate } from './client-ui/client-ui-params'
 import { ClientWorkspaceViewParams } from './client-ui/client-workspace-view-params'
 import { SidebarSessionBeginParams } from './client-ui/sidebar-session-params'
@@ -846,7 +850,10 @@ import {
 } from './projects/repo-params'
 import { ReferenceFind, ReferenceList } from './references/reference-params'
 import { BrowserTarget, ExpectUrlBrowserTarget } from './rpc-param-primitives'
-import { SessionTabsUnsubscribeAllParams } from './session-tabs/session-tabs-params'
+import {
+  SessionTabsSubscribeAllParams,
+  SessionTabsUnsubscribeAllParams
+} from './session-tabs/session-tabs-params'
 import {
   ActivateTab,
   BotLinkActivateTab,
@@ -867,7 +874,9 @@ import {
   SkillsDiscoverParams,
   SkillsGetInstallProgressParams
 } from './skills/skills-params'
+import { BitbucketConnectParams } from './source-control/bitbucket-params'
 import {
+  GitAbortOperation,
   GitBlame,
   GitBranchCompare,
   GitBranchDiff,
@@ -1162,8 +1171,10 @@ export const RPC_PARAMS_BY_METHOD = {
   'accounts.antigravityChatSignInStart': AntigravityChatSignInStartParams,
   'accounts.antigravityChatSignInSubscribe': null,
   'accounts.antigravityList': AntigravityAccountTargetParams,
+  'accounts.antigravityMoveUnheldTerminals': AntigravityUnheldTerminalsParams,
+  'accounts.antigravityReadCurrent': AntigravityAccountTargetParams,
   'accounts.antigravityRemove': AntigravityAccountMutationParams,
-  'accounts.antigravitySelect': AntigravityAccountMutationParams,
+  'accounts.antigravitySelect': AntigravityAccountSelectParams,
   'accounts.beginClaudeSignIn': BeginClaudeSignInParams,
   'accounts.cancelClaudeSignIn': FinishClaudeSignInParams,
   'accounts.consumeCodexResetCredit': ConsumeCodexResetCreditParams,
@@ -1293,6 +1304,9 @@ export const RPC_PARAMS_BY_METHOD = {
   'automation.runs': AutomationRuns,
   'automation.show': AutomationId,
   'automation.update': AutomationUpdate,
+  'bitbucket.connect': BitbucketConnectParams,
+  'bitbucket.disconnect': null,
+  'bitbucket.status': null,
   'bots.access.decide': BotAccessDecide,
   'bots.access.list': null,
   'bots.access.redeem': BotAccessRedeem,
@@ -1672,8 +1686,8 @@ export const RPC_PARAMS_BY_METHOD = {
   'folderWorkspace.getPathStatus': FolderWorkspacePathStatus,
   'folderWorkspace.list': null,
   'folderWorkspace.update': FolderWorkspaceUpdate,
-  'git.abortMerge': WorktreeSelectorOfGitCoreParams,
-  'git.abortRebase': WorktreeSelectorOfGitCoreParams,
+  'git.abortMerge': GitAbortOperation,
+  'git.abortRebase': GitAbortOperation,
   'git.atRiskLocalFiles': WorktreeSelectorOfGitCoreParams,
   'git.blame': GitBlame,
   'git.branchCompare': GitBranchCompare,
@@ -2077,6 +2091,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'pairedServerAsks.introduce': PairedServerAskIntroduceParams,
   'pairedServerAsks.list': PairedServerAskListParams,
   'pairing.createOffer': PairingCreateOfferParamsSchema,
+  'pairing.delegatedMobileDevice.createOffer': DelegatedPhoneServerOfferParamsSchema,
   'pairing.delegatedMobileDevice.sync': DelegatedMobileDeviceSyncParamsSchema,
   'pairing.exchangeTicket': ExchangePairingTicketParamsSchema,
   'pairing.getDirectEndpoints': PairingGetDirectEndpointsParamsSchema,
@@ -2177,7 +2192,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'session.tabs.movePaneToNewTab': MovePaneToNewTab,
   'session.tabs.setTabProps': SetTabProps,
   'session.tabs.subscribe': WorktreeTabSelector,
-  'session.tabs.subscribeAll': null,
+  'session.tabs.subscribeAll': SessionTabsSubscribeAllParams,
   'session.tabs.terminalShellChoices': WorktreeTabSelector,
   'session.tabs.unsubscribe': SessionTabsUnsubscribe,
   'session.tabs.unsubscribeAll': SessionTabsUnsubscribeAllParams,
@@ -2301,6 +2316,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'ui.set': UiUpdate,
   'ui.setCollapsed': SetCollapsedParams,
   'ui.setJiraQuickFilters': JiraQuickFilterStateParam,
+  'ui.setWorkspaceNotificationMuted': UiSetWorkspaceNotificationMuted,
   'updater.check': UpdaterCheckParams,
   'updater.download': null,
   'updater.getStatus': null,

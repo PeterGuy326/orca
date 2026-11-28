@@ -1,5 +1,3 @@
-import { clearGoogleCookiesForRuntimeProfile } from '../../../browser/cookies/browser-google-cookie-clear'
-import { clearCookiesForRuntimeProfile } from '../../../browser/cookies/browser-profile-cookie-clear'
 import { browserCookieImportFailure } from '../../../../shared/browser/cookies/browser-cookie-import-failure-copy'
 import type {
   BrowserDetectProfilesResult,
@@ -21,9 +19,6 @@ import { browserSessionRegistry } from '../../../browser/sessions/profiles/brows
 import { browserManager } from '../../../browser/guest-lifecycle/manager/browser-manager'
 import { getRuntimeDesktopSurface } from '../../construction/runtime-desktop-surface'
 import { waitForTabRegistration } from '../../../ipc/browser/browser-tab-registration-wait'
-import { detectInstalledBrowsers } from '../../../browser/cookies/sources/browser-cookie-detection'
-import { importCookiesIntoBrowserProfile } from '../../../browser/cookies/imports/browser-profile-cookie-import'
-import { browserCookieImportSource } from '../../../browser/cookies/route-partition/browser-route-partition-cookie-import'
 import type {
   BrowserCommandTargetParams,
   RuntimeBrowserCommandHost
@@ -260,9 +255,10 @@ export class RuntimeBrowserProfiles {
   }
 
   async browserProfileDetectBrowsers(): Promise<BrowserDetectProfilesResult> {
+    const det = await import('../../../browser/cookies/sources/browser-cookie-detection')
     return {
       // Expose display metadata only; retain paths/keychain identifiers on the server.
-      browsers: (await detectInstalledBrowsers()).map((browser) => ({
+      browsers: (await det.detectInstalledBrowsers()).map((browser) => ({
         family: browser.family,
         label: browser.label,
         profiles: browser.profiles,
@@ -281,6 +277,10 @@ export class RuntimeBrowserProfiles {
     if (!profile) {
       return browserCookieImportFailure('profileNotFound')
     }
+    const [{ importCookiesIntoBrowserProfile }, { browserCookieImportSource }] = await Promise.all([
+      import('../../../browser/cookies/imports/browser-profile-cookie-import'),
+      import('../../../browser/cookies/route-partition/browser-route-partition-cookie-import')
+    ])
     const result = await importCookiesIntoBrowserProfile(profile, (previous) =>
       browserCookieImportSource(params, previous, {
         canReportPartitionSkippedCookies: params.supportsPartitionSkippedCookies === true
@@ -294,7 +294,9 @@ export class RuntimeBrowserProfiles {
   }
 
   async browserProfileClearGoogleCookies(params: { profileId: string; executorRuntimeId: string }) {
-    return clearGoogleCookiesForRuntimeProfile(params, this.host.getRuntimeId())
+    return (
+      await import('../../../browser/cookies/browser-google-cookie-clear')
+    ).clearGoogleCookiesForRuntimeProfile(params, this.host.getRuntimeId())
   }
 
   async browserProfileClearDefaultCookies(): Promise<BrowserProfileClearDefaultCookiesResult> {
@@ -302,6 +304,8 @@ export class RuntimeBrowserProfiles {
   }
 
   async browserProfileClearCookies(params: { profileId: string; executorRuntimeId: string }) {
-    return clearCookiesForRuntimeProfile(params, this.host.getRuntimeId())
+    return (
+      await import('../../../browser/cookies/browser-profile-cookie-clear')
+    ).clearCookiesForRuntimeProfile(params, this.host.getRuntimeId())
   }
 }
